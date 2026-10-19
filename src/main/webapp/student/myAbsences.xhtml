@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="jakarta.faces.passthrough"
+      xmlns:p="http://primefaces.org/ui">
+    <h:head>
+        <title>Mes absences</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .container { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0 0 1rem; color: #1e3a8a; font-size: 1.2rem; }
+            table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+            th { background: #f8fafc; padding: 0.7rem; text-align: left; font-size: 0.85rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+            td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; vertical-align: middle; }
+            .badge { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; color: white; font-size: 0.8rem; font-weight: 600; }
+            .btn-justify { background: #3b82f6; color: white; border: none; padding: 0.4rem 0.9rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+            .btn-secondary { background: #e2e8f0; color: #475569; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-weight: 600; cursor: pointer; margin-left: 0.5rem; }
+            .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; }
+            select, textarea { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; font-family: inherit; }
+            textarea { resize: vertical; min-height: 100px; }
+            .form-group { margin-bottom: 1rem; }
+            .message-info { background: #dcfce7; color: #166534; padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #22c55e; }
+            .message-error { background: #fee2e2; color: #991b1b; padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #dc2626; }
+            .empty-state { text-align: center; color: #94a3b8; padding: 2rem; font-style: italic; }
+            .justif-form { background: #f8fafc; border-radius: 8px; padding: 1.5rem; border-left: 4px solid #3b82f6; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1>Mes absences</h1>
+                <div>
+                    <span>#{sessionManager.currentUserName}</span>
+                    <h:form style="display: inline; margin-left: 1rem;">
+                        <h:commandButton value="Deconnexion"
+                                         action="#{loginBean.doLogout}"
+                                         styleClass="btn-logout"/>
+                    </h:form>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <h:messages globalOnly="true"
+                            infoClass="message-info"
+                            errorClass="message-error"/>
+
+                <c:if test="#{not empty studentBean.selectedAttendanceId}">
+                    <div class="card">
+                        <h2>Justifier l'absence</h2>
+                        <div class="justif-form">
+                            <h:form enctype="multipart/form-data">
+                                <div class="form-group">
+                                    <label>Cause</label>
+                                    <h:selectOneMenu value="#{studentBean.selectedCauseTypeId}">
+                                        <f:selectItem itemLabel="-- Choisir une cause --" itemValue=""/>
+                                        <f:selectItems value="#{studentBean.availableCauses}"
+                                                       var="cause"
+                                                       itemValue="#{cause.causeTypeID}"
+                                                       itemLabel="#{cause.name}"/>
+                                    </h:selectOneMenu>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Explication detaillee</label>
+                                    <h:inputTextarea value="#{studentBean.justificationReason}" rows="4"/>
+                                </div>
+
+                                <div class="form-group">
+    <label>Preuve (optionnel)</label>
+    <p:fileUpload value="#{studentBean.proofFile}"
+                  mode="simple"
+                  accept="image/*,application/pdf"
+                  skinSimple="true"
+                  pt:onchange="showProofPreview(this)"/>
+    <div id="proofPreview" style="margin-top: 0.8rem;"></div>
+    <script type="text/javascript">
+        /* <![CDATA[ */
+        function showProofPreview(input) {
+            var preview = document.getElementById('proofPreview');
+            if (!input.files || !input.files[0]) { preview.innerHTML = ''; return; }
+            var file = input.files[0];
+            var sizeKB = Math.round(file.size / 1024);
+            preview.innerHTML =
+                '<div style="padding: 0.8rem 1rem; background: #dcfce7; border-left: 4px solid #22c55e; ' +
+                'border-radius: 6px; color: #166534; font-size: 0.9rem; margin-bottom: 0.5rem;">' +
+                '✓ Fichier sélectionné : <strong>' + file.name + '</strong> (' + sizeKB + ' KB)</div>';
+            if (file.type.indexOf('image/') === 0) {
+                var reader = new FileReader();
+                reader.onload = function(evt) {
+                    preview.innerHTML +=
+                        '<img src="' + evt.target.result + '" alt="Aperçu" ' +
+                        'style="max-width: 220px; max-height: 220px; border-radius: 8px; ' +
+                        'box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid #e2e8f0;"/>';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        /* ]]> */
+    </script>
+</div>
+
+                                <div>
+                                    <h:commandButton value="Soumettre la justification"
+                                                     action="#{studentBean.submitJustification}"
+                                                     styleClass="btn-primary"/>
+                                    <h:commandButton value="Annuler"
+                                                     action="#{studentBean.cancelJustification}"
+                                                     styleClass="btn-secondary"
+                                                     immediate="true"/>
+                                </div>
+                            </h:form>
+                        </div>
+                    </div>
+                </c:if>
+
+                <div class="card">
+                    <h2>Liste de mes absences (#{studentBean.absences.size()})</h2>
+
+                    <c:if test="#{empty studentBean.absences}">
+                        <div class="empty-state">Vous n'avez aucune absence enregistree.</div>
+                    </c:if>
+
+                    <c:if test="#{not empty studentBean.absences}">
+                        <h:form>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Cours</th>
+                                        <th>Prof</th>
+                                        <th>Statut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ui:repeat value="#{studentBean.absences}" var="row">
+                                        <tr>
+                                            <td>#{row.attendance.attendance.attendanceDate}</td>
+                                            <td>#{row.attendance.attendance.course.code} - #{row.attendance.attendance.course.name}</td>
+                                            <td>#{row.attendance.attendance.faculty.firstName} #{row.attendance.attendance.faculty.lastName}</td>
+                                            <td>
+                                                <span class="badge" style="background-color: #{row.statusColor};">
+                                                    #{row.statusLabel}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <c:if test="#{not row.hasJustification}">
+                                                    <h:commandButton value="Justifier"
+                                                                     action="#{studentBean.prepareJustification(row.attendance.attendance.attendanceID)}"
+                                                                     styleClass="btn-justify"/>
+                                                </c:if>
+                                                <c:if test="#{row.hasJustification}">
+                                                    <span style="color: #94a3b8; font-size: 0.85rem;">Deja justifiee</span>
+                                                </c:if>
+                                            </td>
+                                        </tr>
+                                    </ui:repeat>
+                                </tbody>
+                            </table>
+                        </h:form>
+                    </c:if>
+                </div>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

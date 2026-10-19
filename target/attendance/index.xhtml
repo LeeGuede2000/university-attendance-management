@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html">
+    <h:head>
+        <title>Attendance App - IUGB</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+                color: white;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
+            .card {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 3rem 4rem;
+                border-radius: 16px;
+                text-align: center;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+            h1 { margin: 0 0 0.5rem; font-size: 2.5rem; }
+            p { margin: 0.3rem 0; opacity: 0.9; }
+            .count {
+                font-size: 4rem;
+                font-weight: bold;
+                margin: 1rem 0;
+                color: #22c55e;
+            }
+            .badge {
+                display: inline-block;
+                margin-top: 1rem;
+                padding: 0.5rem 1.5rem;
+                background: #22c55e;
+                border-radius: 999px;
+                font-weight: bold;
+            }
+        </style>
+    </h:head>
+    <h:body>
+        <div class="card">
+            <h1>Attendance App</h1>
+            <p>Système de gestion des absences — IUGB</p>
+            <div class="count">#{homeBean.studentCount}</div>
+            <p>étudiants dans la base de données</p>
+            <div class="badge">Connexion MySQL réussie</div>
+        </div>
+    </h:body>
+</html>

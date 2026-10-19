@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Gestion des actions</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; }
+            .header { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; }
+            .container { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #f5f3ff; padding: 0.7rem; text-align: left; color: #6d28d9; border-bottom: 2px solid #a855f7; font-size: 0.85rem; }
+            td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+            .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-right: 0.3rem; }
+            .btn-add { background: #16a34a; color: white; }
+            .btn-edit { background: #3b82f6; color: white; }
+            .btn-delete { background: #dc2626; color: white; }
+            .btn-cancel { background: #94a3b8; color: white; }
+            .btn-complete { background: #16a34a; color: white; }
+            .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+            label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; }
+            input, select, textarea { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+            textarea { resize: vertical; min-height: 80px; }
+            .badge-done { background: #dcfce7; color: #166534; padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+            .badge-pending { background: #fef3c7; color: #78350f; padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+            .pill { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; background: #ede9fe; color: #6d28d9; font-size: 0.8rem; font-weight: 600; }
+            .messages { padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; }
+            .messages.info { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+            .messages.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1 style="margin: 0; font-size: 1.4rem;">🎯 Gestion des actions advisor</h1>
+                <h:form>
+                    <h:commandButton value="Retour"
+                                     action="dashboard.xhtml?faces-redirect=true"
+                                     style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px;"/>
+                </h:form>
+            </div>
+
+            <div class="container">
+
+                <h:messages globalOnly="true"
+                            infoClass="messages info"
+                            errorClass="messages error"/>
+
+                <!-- Formulaire add/edit -->
+                <c:if test="#{actionBean.selected != null}">
+                    <div class="card">
+                        <h2 style="margin: 0 0 1rem; color: #6d28d9;">
+                            #{actionBean.editMode ? '✏️ Modifier' : '➕ Nouvelle'} action
+                        </h2>
+                        <h:form>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Nom de l'action *</label>
+                                    <h:inputText value="#{actionBean.selected.name}"/>
+                                </div>
+                                <div>
+                                    <label>Nombre d'absences</label>
+                                    <h:inputText value="#{actionBean.selected.nbrAbsences}"/>
+                                </div>
+                                <div>
+                                    <label>Étudiant concerné</label>
+                                    <h:selectOneMenu value="#{actionBean.selectedStudentId}">
+                                        <f:selectItem itemLabel="-- Choisir --" itemValue=""/>
+                                        <f:selectItems value="#{actionBean.availableStudents}"
+                                                       var="s"
+                                                       itemValue="#{s.studentID}"
+                                                       itemLabel="#{s.firstName} #{s.lastName} (#{s.matricule})"/>
+                                    </h:selectOneMenu>
+                                </div>
+                                <div>
+                                    <label>Cours concerné</label>
+                                    <h:selectOneMenu value="#{actionBean.selectedCourseId}">
+                                        <f:selectItem itemLabel="-- Choisir --" itemValue=""/>
+                                        <f:selectItems value="#{actionBean.availableCourses}"
+                                                       var="c"
+                                                       itemValue="#{c.courseID}"
+                                                       itemLabel="#{c.code} - #{c.name}"/>
+                                    </h:selectOneMenu>
+                                </div>
+                                <div style="grid-column: span 2;">
+                                    <label>Contenu / Description de l'action</label>
+                                    <h:inputTextarea value="#{actionBean.selected.actionContent}" rows="4"/>
+                                </div>
+                                <div>
+                                    <label>Status</label>
+                                    <h:selectOneMenu value="#{actionBean.selected.isCompleted}">
+                                        <f:selectItem itemLabel="En cours" itemValue="#{false}"/>
+                                        <f:selectItem itemLabel="Terminée" itemValue="#{true}"/>
+                                    </h:selectOneMenu>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1.5rem;">
+                                <h:commandButton value="💾 Enregistrer"
+                                                 action="#{actionBean.save}"
+                                                 styleClass="btn btn-add"/>
+                                <h:commandButton value="Annuler"
+                                                 action="#{actionBean.cancel}"
+                                                 styleClass="btn btn-cancel"
+                                                 immediate="true"/>
+                            </div>
+                        </h:form>
+                    </div>
+                </c:if>
+
+                <!-- Liste -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 style="margin: 0; color: #6d28d9;">📋 Mes actions (#{actionBean.actions.size()})</h2>
+                        <h:form>
+                            <h:commandButton value="➕ Nouvelle action"
+                                             action="#{actionBean.prepareAdd}"
+                                             styleClass="btn btn-add"/>
+                        </h:form>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Action</th>
+                                <th>Étudiant</th>
+                                <th>Cours</th>
+                                <th>Abs.</th>
+                                <th>Statut</th>
+                                <th>Opérations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <ui:repeat value="#{actionBean.actions}" var="a">
+                                <tr>
+                                    <td>#{a.actionDate}</td>
+                                    <td>
+                                        <strong>#{a.name}</strong>
+                                        <br/><small style="color:#94a3b8;">#{a.actionContent}</small>
+                                    </td>
+                                    <td>
+                                        <c:if test="#{a.student != null}">
+                                            #{a.student.firstName} #{a.student.lastName}
+                                            <br/><small style="color:#94a3b8;">#{a.student.matricule}</small>
+                                        </c:if>
+                                    </td>
+                                    <td>
+                                        <c:if test="#{a.course != null}">
+                                            <span class="pill">#{a.course.code}</span>
+                                        </c:if>
+                                    </td>
+                                    <td><strong>#{a.nbrAbsences}</strong></td>
+                                   <td>
+                                    <span class="#{a.isCompleted ? 'badge-done' : 'badge-pending'}">
+                                            #{a.isCompleted ? '✓ Terminée' : '⏳ En cours'}
+                                         </span>
+                                  </td>
+                                    <td>
+                                        <h:form style="display: inline;">
+                                            <h:commandButton value="✏️"
+                                                             action="#{actionBean.prepareEdit(a)}"
+                                                             styleClass="btn btn-edit"/>
+                                           <h:commandButton value="✓"
+                 action="#{actionBean.markCompleted(a)}"
+                 styleClass="btn btn-complete"
+                 title="Marquer comme terminée"
+                 rendered="#{not a.isCompleted}"/>
+                                            <h:commandButton value="🗑️"
+                                                             action="#{actionBean.delete(a)}"
+                                                             styleClass="btn btn-delete"
+                                                             onclick="return confirm('Confirmer la suppression ?');"/>
+                                        </h:form>
+                                    </td>
+                                </tr>
+                            </ui:repeat>
+                            <c:if test="#{empty actionBean.actions}">
+                                <tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 2rem;">
+                                    Aucune action enregistrée. Cliquez sur "Nouvelle action" pour commencer.
+                                </td></tr>
+                            </c:if>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:c="jakarta.tags.core">
+
+    <h:head>
+        <title>Bienvenue - Attendance App</title>
+
+        <style>
+            /* Reset */
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: linear-gradient(
+                    135deg,
+                    #1e3a8a 0%,
+                    #3b82f6 100%
+                );
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                color: white;
+            }
+
+            /* Main Card */
+            .card {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                padding: 3rem;
+                border-radius: 16px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                max-width: 600px;
+                width: 90%;
+                text-align: center;
+            }
+
+            h1 {
+                margin: 0 0 0.5rem;
+                font-size: 2.2rem;
+            }
+
+            .username {
+                font-size: 1.5rem;
+                color: #fbbf24;
+                font-weight: bold;
+                margin: 0.5rem 0;
+            }
+
+            /* Status Badge */
+            .badge {
+                display: inline-block;
+                padding: 0.5rem 1.5rem;
+                background: #22c55e;
+                border-radius: 999px;
+                font-weight: bold;
+                margin: 1rem 0;
+            }
+
+            /* Navigation Links */
+            .menu-links {
+                margin-top: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .menu-link {
+                color: white;
+                text-decoration: underline;
+                font-size: 1rem;
+                transition: 0.3s;
+            }
+
+            .menu-link:hover {
+                color: #fbbf24;
+            }
+
+            /* Description */
+            .description {
+                opacity: 0.85;
+                font-size: 0.95rem;
+                margin-top: 1.5rem;
+            }
+
+            /* Logout Button */
+            .btn-logout {
+                display: inline-block;
+                padding: 0.8rem 1.8rem;
+                background: rgba(220, 38, 38, 0.85);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 1rem;
+                font-weight: 600;
+                margin-top: 1.5rem;
+                transition: 0.3s;
+            }
+
+            .btn-logout:hover {
+                background: rgba(220, 38, 38, 1);
+                transform: translateY(-2px);
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+
+        <div class="card">
+
+            <!-- ================================================= -->
+            <!-- USER NOT CONNECTED -->
+            <!-- ================================================= -->
+            <c:if test="#{not sessionManager.loggedIn}">
+                <h:outputLink value="login.xhtml">
+                    Veuillez vous connecter
+                </h:outputLink>
+            </c:if>
+
+            <!-- ================================================= -->
+            <!-- USER CONNECTED -->
+            <!-- ================================================= -->
+            <c:if test="#{sessionManager.loggedIn}">
+
+                <!-- Welcome Section -->
+                <h1>Bienvenue !</h1>
+
+                <div class="username">
+                    #{sessionManager.currentUserName}
+                </div>
+
+                <div class="badge">
+                    Authentification réussie
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="menu-links">
+
+                    <!-- STUDENT -->
+                    <c:if test="#{sessionManager.currentClientTypeName == 'Student'}">
+
+                        <h:outputLink
+                            value="student/myAbsences.xhtml"
+                            styleClass="menu-link">
+
+                            Voir mes absences
+
+                        </h:outputLink>
+
+                    </c:if>
+
+                    <!-- FACULTY -->
+                    <c:if test="#{sessionManager.currentClientTypeName == 'Faculty'}">
+
+                        <h:outputLink
+                            value="faculty/takeAttendance.xhtml"
+                            styleClass="menu-link">
+
+                            Prendre la présence
+
+                        </h:outputLink>
+
+                        <h:outputLink
+                            value="faculty/decideJustifications.xhtml"
+                            styleClass="menu-link">
+
+                            Décisions finales sur justifications
+
+                        </h:outputLink>
+
+                        <!-- ADVISOR -->
+                        <c:if test="#{sessionManager.currentAccount.client.personID != null}">
+
+                            <h:outputLink
+                                value="advisor/reviewJustifications.xhtml"
+                                styleClass="menu-link">
+
+                                Examiner les justifications (Advisor)
+
+                            </h:outputLink>
+
+                        </c:if>
+
+                    </c:if>
+
+                </div>
+
+                <!-- Information -->
+                <p class="description">
+                    Les dashboards spécifiques
+                    (Student, Parent, Faculty, etc.)
+                    seront construits dans les étapes suivantes.
+                </p>
+
+                <!-- Logout Form -->
+                <h:form>
+
+                    <h:commandButton
+                        value="Se déconnecter"
+                        action="#{loginBean.doLogout}"
+                        styleClass="btn-logout" />
+
+                </h:form>
+
+            </c:if>
+
+        </div>
+
+    </h:body>
+
+</html>

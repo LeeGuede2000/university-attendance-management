@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Gestion des cours</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; }
+            .header { background: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; }
+            .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #dbeafe; padding: 0.7rem; text-align: left; color: #1e3a5f; border-bottom: 2px solid #3b82f6; font-size: 0.85rem; }
+            td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+            .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-right: 0.3rem; }
+            .btn-add { background: #16a34a; color: white; }
+            .btn-edit { background: #3b82f6; color: white; }
+            .btn-delete { background: #dc2626; color: white; }
+            .btn-cancel { background: #94a3b8; color: white; }
+            .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+            label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; }
+            input, select, textarea { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+            textarea { resize: vertical; min-height: 80px; }
+            .pill { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; background: #dbeafe; color: #1e3a5f; font-size: 0.8rem; font-weight: 600; }
+            .pill-stem { background: #dcfce7; color: #166534; }
+            .pill-bss { background: #fef3c7; color: #78350f; }
+            .messages { padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; }
+            .messages.info { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+            .messages.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1 style="margin: 0; font-size: 1.4rem;">📚 Gestion des Cours</h1>
+                <h:form>
+                    <h:commandButton value="Retour"
+                                     action="dashboard.xhtml?faces-redirect=true"
+                                     style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer;"/>
+                </h:form>
+            </div>
+
+            <div class="container">
+
+                <h:messages globalOnly="true"
+                            infoClass="messages info"
+                            errorClass="messages error"/>
+
+                <!-- Formulaire add/edit -->
+                <c:if test="#{courseBean.selected != null}">
+                    <div class="card" style="border-left: 5px solid #3b82f6;">
+                        <h2 style="margin: 0 0 1rem; color: #1e3a5f;">
+                            #{courseBean.editMode ? '✏️ Modifier' : '➕ Ajouter'} un cours
+                        </h2>
+                        <h:form>
+                            <div class="form-grid">
+
+                                <div>
+                                    <label>Nom du cours *</label>
+                                    <h:inputText value="#{courseBean.selected.name}"/>
+                                </div>
+
+                                <div>
+                                    <label>Code *</label>
+                                    <h:inputText value="#{courseBean.selected.code}"/>
+                                </div>
+
+                                <div>
+                                    <label>École</label>
+                                    <h:selectOneMenu value="#{courseBean.selected.school}">
+                                        <f:selectItem itemValue="" itemLabel="-- Sélectionner --"/>
+                                        <f:selectItem itemValue="SSE" itemLabel="SSE"/>
+                                        <f:selectItem itemValue="BSS" itemLabel="BSS"/>
+                                    </h:selectOneMenu>
+                                </div>
+
+                                <div>
+                                    <label>Crédits</label>
+                                    <h:inputText value="#{courseBean.selected.credits}"/>
+                                </div>
+
+                                <div style="grid-column: span 2;">
+                                    <label>Description</label>
+                                    <h:inputTextarea value="#{courseBean.selected.description}" rows="3"/>
+                                </div>
+
+                            </div>
+                            <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
+                                <h:commandButton value="💾 Enregistrer"
+                                                 action="#{courseBean.save}"
+                                                 styleClass="btn btn-add"/>
+                                <h:commandButton value="Annuler"
+                                                 action="#{courseBean.cancel}"
+                                                 styleClass="btn btn-cancel"
+                                                 immediate="true"/>
+                            </div>
+                        </h:form>
+                    </div>
+                </c:if>
+
+                <!-- Liste -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 style="margin: 0; color: #1e3a5f;">📋 Liste des cours (#{courseBean.courses.size()})</h2>
+                        <h:form>
+                            <h:commandButton value="➕ Nouveau cours"
+                                             action="#{courseBean.prepareAdd}"
+                                             styleClass="btn btn-add"/>
+                        </h:form>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Code</th>
+                                <th>Nom</th>
+                                <th>École</th>
+                                <th>Crédits</th>
+                                <th>Description</th>
+                                <th>Opérations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <ui:repeat value="#{courseBean.courses}" var="c">
+                                <tr>
+                                    <td><small style="color:#94a3b8;">#{c.courseID}</small></td>
+                                    <td><span class="pill">#{c.code}</span></td>
+                                    <td><strong>#{c.name}</strong></td>
+                                   <td>
+                                      <span class="pill #{c.school eq 'SSE' ? 'pill-stem' : (c.school eq 'BSS' ? 'pill-bss' : '')}"
+                                             style="#{empty c.school ? 'background:none;color:#9ca3af;font-weight:normal;' : ''}">
+                                        #{empty c.school ? '—' : c.school}
+                                   </span>
+                                    </td>
+                                    <td>#{c.credits != null ? c.credits : '—'}</td>
+                                    <td>
+                                        <small style="color: #{empty c.description ? '#9ca3af' : '#475569'};">
+                                            #{empty c.description ? '—' : c.description}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <h:form style="display: inline;">
+                                            <h:commandButton value="✏️"
+                                                             action="#{courseBean.prepareEdit(c)}"
+                                                             styleClass="btn btn-edit"/>
+                                          <h:commandButton value="🚫 Désactiver"
+                 action="#{courseBean.delete(c)}"
+                 styleClass="btn btn-delete"
+                 onclick="return confirm('Désactiver ce cours ? Les statistiques seront conservées.');"/>
+                                        </h:form>
+                                    </td>
+                                </tr>
+                            </ui:repeat>
+                            <c:if test="#{empty courseBean.courses}">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: #94a3b8; padding: 2rem;">
+                                        Aucun cours enregistré. Cliquez sur "Nouveau cours" pour commencer.
+                                    </td>
+                                </tr>
+                            </c:if>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html> 

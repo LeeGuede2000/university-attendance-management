@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Dashboard Professeur</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+            .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+            .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; }
+            .stat-card .number { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; margin: 0.3rem 0; }
+            .stat-card .label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+            .stat-card.alert .number { color: #f59e0b; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0 0 1rem; color: #1e3a8a; font-size: 1.2rem; }
+            .actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+            .btn-action { background: #3b82f6; color: white; border: none; padding: 0.9rem 1.6rem; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+            .btn-action.green { background: #16a34a; }
+            .btn-action.orange { background: #f59e0b; }
+            .btn-action.purple { background: #8b5cf6; }
+            .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #f8fafc; padding: 0.6rem; text-align: left; font-size: 0.85rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+            td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+            .pill { display: inline-block; padding: 0.15rem 0.7rem; border-radius: 999px; background: #dbeafe; color: #1e3a8a; font-size: 0.8rem; font-weight: 600; }
+            .alert-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; color: white; font-size: 0.8rem; font-weight: 600; }
+            .filter-bar { background: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+            select { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; }
+            .hint { color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0 1rem; font-style: italic; }
+            .comparison-box { background: #f8fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn and facultyDashboardBean.currentFaculty != null}">
+
+            <div class="header">
+                <h1>👨‍🏫 #{facultyDashboardBean.currentFaculty.firstName} #{facultyDashboardBean.currentFaculty.lastName}</h1>
+                <div>
+                    <span>#{facultyDashboardBean.currentFaculty.departmentName}<c:if test="#{facultyDashboardBean.advisor}"> · Advisor</c:if></span>
+                    <h:form style="display: inline; margin-left: 1rem;">
+                        <h:commandButton value="Déconnexion"
+                                         action="#{loginBean.doLogout}"
+                                         styleClass="btn-logout"/>
+                    </h:form>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <!-- Filtre Term/Period -->
+                <h:form>
+                    <div class="filter-bar">
+                        <label><strong>Semestre :</strong></label>
+                        <h:selectOneMenu value="#{facultyDashboardBean.selectedTermID}">
+                            <f:selectItem itemLabel="Fall" itemValue="TERM_1"/>
+                            <f:selectItem itemLabel="Spring" itemValue="TERM_2"/>
+                            <f:selectItem itemLabel="Summer" itemValue="TERM_3"/>
+                        </h:selectOneMenu>
+                        <label><strong>Année :</strong></label>
+                        <h:selectOneMenu value="#{facultyDashboardBean.selectedPeriodID}">
+                            <f:selectItem itemLabel="2023-2024" itemValue="PER_1"/>
+                            <f:selectItem itemLabel="2024-2025" itemValue="PER_2"/>
+                            <f:selectItem itemLabel="2025-2026" itemValue="PER_3"/>
+                        </h:selectOneMenu>
+                        <h:commandButton value="Actualiser"
+                                         action="#{facultyDashboardBean.refresh}"
+                                         style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;"/>
+                    </div>
+                </h:form>
+
+                <!-- Compteurs -->
+                <div class="grid-cards">
+                    <div class="stat-card">
+                        <div class="label">Mes cours</div>
+                        <div class="number">#{facultyDashboardBean.myCourses.size()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Sessions semestre</div>
+                        <div class="number">#{facultyDashboardBean.nbSessionsTermPeriod}</div>
+                    </div>
+                    <div class="stat-card alert">
+                        <div class="label">Décisions en attente</div>
+                        <div class="number">#{facultyDashboardBean.nbPendingDecisions}</div>
+                    </div>
+                    <c:if test="#{facultyDashboardBean.advisor}">
+                        <div class="stat-card alert">
+                            <div class="label">Justifs advisor</div>
+                            <div class="number">#{facultyDashboardBean.nbPendingAdvisorReviews}</div>
+                        </div>
+                    </c:if>
+                </div>
+
+                <!-- Actions rapides -->
+                <div class="card">
+                    <h2>🚀 Actions rapides</h2>
+                    <div class="actions">
+                        <h:outputLink value="takeAttendance.xhtml" styleClass="btn-action">📝 Prendre la présence</h:outputLink>
+                        <h:outputLink value="decideJustifications.xhtml" styleClass="btn-action orange">⚖️ Décisions justifs (#{facultyDashboardBean.nbPendingDecisions})</h:outputLink>
+                        <c:if test="#{facultyDashboardBean.advisor}">
+                            <h:outputLink value="../advisor/reviewJustifications.xhtml" styleClass="btn-action green">👨‍⚖️ Examiner justifs (#{facultyDashboardBean.nbPendingAdvisorReviews})</h:outputLink>
+                            <h:outputLink value="../advisor/dashboard.xhtml" styleClass="btn-action purple">🎓 Dashboard Advisor</h:outputLink>
+                            <h:outputLink value="../advisor/actions.xhtml" styleClass="btn-action purple">🎯 Gérer mes actions</h:outputLink>
+                            <h:outputLink value="manageGrades.xhtml" styleClass="btn-action green">📝 Saisir les notes</h:outputLink>
+                            <h:outputLink value="mySessions.xhtml" styleClass="btn-action" style="background: #8b5cf6;">📸 Mes sessions</h:outputLink>
+                        </c:if>
+                    </div>
+                </div>
+
+                <!-- Stats école -->
+                <div class="card">
+                    <h2>📊 Statistiques globales de mon école (#{facultyDashboardBean.currentFaculty.departmentName})</h2>
+                    <p class="hint">Stats sur le semestre sélectionné, comparées par genre.</p>
+                    <div class="grid-cards">
+                        <div class="stat-card">
+                            <div class="label">Taux présence école</div>
+                            <div class="number" style="color:#16a34a;">#{facultyDashboardBean.schoolPresencePct}%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Taux FEMININ</div>
+                            <div class="number" style="color:#ec4899;">#{facultyDashboardBean.schoolFemalePct}%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Taux MASCULIN</div>
+                            <div class="number" style="color:#3b82f6;">#{facultyDashboardBean.schoolMalePct}%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparaison year-over-year -->
+                <div class="card">
+                    <h2>📈 Comparaison année par année - mes cours</h2>
+                    <p class="hint">Absences accumulées dans mes cours, comparées entre les 2 dernières années académiques.</p>
+                    <div class="comparison-box">
+                        <p style="margin: 0; font-size: 1rem;">
+                            Année 2025-2026 : <strong style="color:#dc2626;">#{facultyDashboardBean.currentYearAbsences}</strong> absences
+                            &#160;|&#160;
+                            Année 2024-2025 : <strong style="color:#64748b;">#{facultyDashboardBean.lastYearAbsences}</strong> absences
+                            &#160;|&#160;
+                            <c:if test="#{facultyDashboardBean.evolutionPct > 0}">
+                                <span style="color:#dc2626; font-weight:bold;">+#{facultyDashboardBean.evolutionPct}% (en hausse)</span>
+                            </c:if>
+                            <c:if test="#{facultyDashboardBean.evolutionPct &lt; 0}">
+                                <span style="color:#16a34a; font-weight:bold;">#{facultyDashboardBean.evolutionPct}% (en baisse ✓)</span>
+                            </c:if>
+                            <c:if test="#{facultyDashboardBean.evolutionPct == 0}">
+                                <span style="color:#64748b;">Stable</span>
+                            </c:if>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Stats par cours -->
+                <div class="card">
+                    <h2>📚 Statistiques par cours (sur le semestre sélectionné)</h2>
+                    <p class="hint">Détail des présences/absences/taux dans chacun de mes cours.</p>
+                    <c:if test="#{empty facultyDashboardBean.courseStats}">
+                        <p style="color: #94a3b8; text-align: center; padding: 1.5rem;">
+                            Aucune session sur ce semestre.
+                        </p>
+                    </c:if>
+                    <c:if test="#{not empty facultyDashboardBean.courseStats}">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Cours</th>
+                                    <th>Sessions</th>
+                                    <th>Présents</th>
+                                    <th>Absents</th>
+                                    <th>Taux</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{facultyDashboardBean.courseStats}" var="cs">
+                                    <tr>
+                                        <td><span class="pill">#{cs.code}</span></td>
+                                        <td><strong>#{cs.name}</strong></td>
+                                        <td>#{cs.sessions}</td>
+                                        <td style="color:#16a34a;"><strong>#{cs.presents}</strong></td>
+                                        <td style="color:#dc2626;"><strong>#{cs.absences}</strong></td>
+                                        <td>
+                                            <span class="alert-tag" style="background-color: #{cs.color};">
+                                                #{cs.formattedPct}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </ui:repeat>
+                            </tbody>
+                        </table>
+                    </c:if>
+                </div>
+
+                <!-- Étudiants à risque dans mes cours -->
+                <div class="card">
+                    <h2>🚨 Étudiants à risque dans mes cours (politique 3/4/5)</h2>
+                    <p class="hint">Étudiants ayant 3+ absences dans un de mes cours. À surveiller en priorité.</p>
+                    <c:if test="#{empty facultyDashboardBean.studentsAtRisk}">
+                        <p style="color: #94a3b8; text-align: center; padding: 1.5rem;">
+                            ✓ Aucun étudiant en alerte dans mes cours.
+                        </p>
+                    </c:if>
+                    <c:if test="#{not empty facultyDashboardBean.studentsAtRisk}">
+                        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <table>
+                                <thead style="position: sticky; top: 0; z-index: 1;">
+                                    <tr>
+                                        <th style="background:#f8fafc;">Étudiant</th>
+                                        <th style="background:#f8fafc;">Matricule</th>
+                                        <th style="background:#f8fafc;">Cours</th>
+                                        <th style="background:#f8fafc;">Absences</th>
+                                        <th style="background:#f8fafc;">Niveau</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ui:repeat value="#{facultyDashboardBean.studentsAtRisk}" var="r">
+                                        <tr>
+                                            <td><strong>#{r.fullName}</strong></td>
+                                            <td><small style="color:#94a3b8;">#{r.matricule}</small></td>
+                                            <td><span class="pill">#{r.courseCode}</span></td>
+                                            <td><strong style="font-size: 1.05rem;">#{r.nbAbsences}</strong></td>
+                                            <td>
+                                                <span class="alert-tag" style="background-color: #{r.alertColor};">
+                                                    #{r.alertLevel}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </ui:repeat>
+                                </tbody>
+                            </table>
+                        </div>
+                    </c:if>
+                </div>
+
+                <!-- Mes cours assignés -->
+                <div class="card">
+                    <h2>📋 Mes cours assignés</h2>
+                    <ui:repeat value="#{facultyDashboardBean.myCourses}" var="c">
+                        <span class="pill" style="font-size: 0.95rem; padding: 0.5rem 1rem; margin: 0.3rem;">
+                            #{c.code} - #{c.name}
+                        </span>
+                    </ui:repeat>
+                    <c:if test="#{empty facultyDashboardBean.myCourses}">
+                        <p style="color:#94a3b8; font-style: italic;">Aucun cours assigné.</p>
+                    </c:if>
+                </div>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

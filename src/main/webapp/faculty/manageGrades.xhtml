@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Saisie des notes</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .container { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0 0 1rem; color: #1e3a8a; font-size: 1.2rem; }
+            .filter-bar { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+            label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; }
+            select, input { padding: 0.55rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #f8fafc; padding: 0.7rem; text-align: left; font-size: 0.85rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+            td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+            .pill { display: inline-block; padding: 0.15rem 0.7rem; border-radius: 999px; background: #dbeafe; color: #1e3a8a; font-size: 0.8rem; font-weight: 600; }
+            .alert-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; color: white; font-size: 0.8rem; font-weight: 600; }
+            .grade-input { width: 80px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-weight: 600; }
+            .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; }
+            .btn-back { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; }
+            .messages { padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; }
+            .messages.info { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+            .messages.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+            .letter-grade { font-weight: 800; font-size: 1.1rem; color: #1e3a8a; }
+            .hint { color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0 1rem; font-style: italic; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1>📝 Saisie des notes finales</h1>
+                <h:form>
+                    <h:commandButton value="Retour"
+                                     action="dashboard.xhtml?faces-redirect=true"
+                                     styleClass="btn-back"/>
+                </h:form>
+            </div>
+
+            <div class="container">
+
+                <h:messages globalOnly="true"
+                            infoClass="messages info"
+                            errorClass="messages error"/>
+
+                <!-- Sélection cours + term/period -->
+                <div class="card">
+                    <h2>1. Sélection du cours</h2>
+                    <h:form>
+                        <div class="filter-bar">
+                            <div>
+                                <label>Cours</label>
+                                <h:selectOneMenu value="#{gradesBean.selectedCourseID}"
+                                                 style="min-width: 280px;">
+                                    <f:selectItem itemLabel="-- Choisir un cours --" itemValue=""/>
+                                    <f:selectItems value="#{gradesBean.myCourses}"
+                                                   var="c"
+                                                   itemValue="#{c.courseID}"
+                                                   itemLabel="#{c.label}"/>
+                                    <f:ajax listener="#{gradesBean.onCourseSelected}"
+                                            render="@form :gradeForm"/>
+                                </h:selectOneMenu>
+                            </div>
+                            <div>
+                                <label>Semestre</label>
+                                <h:selectOneMenu value="#{gradesBean.selectedTermID}">
+                                    <f:selectItem itemLabel="Fall" itemValue="TERM_1"/>
+                                    <f:selectItem itemLabel="Spring" itemValue="TERM_2"/>
+                                    <f:selectItem itemLabel="Summer" itemValue="TERM_3"/>
+                                    <f:ajax listener="#{gradesBean.onCourseSelected}"
+                                            render=":gradeForm"/>
+                                </h:selectOneMenu>
+                            </div>
+                            <div>
+                                <label>Année</label>
+                                <h:selectOneMenu value="#{gradesBean.selectedPeriodID}">
+                                    <f:selectItem itemLabel="2023-2024" itemValue="PER_1"/>
+                                    <f:selectItem itemLabel="2024-2025" itemValue="PER_2"/>
+                                    <f:selectItem itemLabel="2025-2026" itemValue="PER_3"/>
+                                    <f:ajax listener="#{gradesBean.onCourseSelected}"
+                                            render=":gradeForm"/>
+                                </h:selectOneMenu>
+                            </div>
+                        </div>
+                    </h:form>
+                </div>
+
+                <!-- Tableau étudiants -->
+                <h:form id="gradeForm">
+                    <div class="card">
+                        <h2>2. Saisie des notes (#{gradesBean.students.size()} étudiants)</h2>
+                        <p class="hint">
+                            Saisis la note numérique sur 100. La lettre + isExcluded (si abs ≥ 5) sont calculés automatiquement.
+                        </p>
+
+                        <c:if test="#{empty gradesBean.students}">
+                            <p style="text-align: center; color: #94a3b8; padding: 2rem;">
+                                Sélectionnez un cours pour voir la liste des étudiants.
+                            </p>
+                        </c:if>
+
+                        <c:if test="#{not empty gradesBean.students}">
+                            <div style="max-height: 500px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                <table>
+                                    <thead style="position: sticky; top: 0; z-index: 1;">
+                                        <tr>
+                                            <th style="background:#f8fafc;">Matricule</th>
+                                            <th style="background:#f8fafc;">Étudiant</th>
+                                            <th style="background:#f8fafc;">Présents</th>
+                                            <th style="background:#f8fafc;">Absences</th>
+                                            <th style="background:#f8fafc;">Statut</th>
+                                            <th style="background:#f8fafc;">Note /100</th>
+                                            <th style="background:#f8fafc;">Lettre actuelle</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <ui:repeat value="#{gradesBean.students}" var="st">
+                                            <tr>
+                                                <td><small style="color:#94a3b8;">#{st.matricule}</small></td>
+                                                <td><strong>#{st.fullName}</strong></td>
+                                                <td style="color:#16a34a;"><strong>#{st.presences}</strong></td>
+                                                <td style="color:#dc2626;"><strong>#{st.absences}</strong></td>
+                                                <td><span class="alert-tag" style="background-color: #{st.statusColor};">#{st.status}</span></td>
+                                                <td>
+                                                    <h:inputText value="#{st.numericGrade}"
+                                                                 styleClass="grade-input"/>
+                                                </td>
+                                                <td>
+                                                    <c:if test="#{not empty st.finalGrade}">
+                                                        <span class="letter-grade">#{st.finalGrade}</span>
+                                                    </c:if>
+                                                    <c:if test="#{empty st.finalGrade}">
+                                                        <span style="color:#94a3b8;">—</span>
+                                                    </c:if>
+                                                </td>
+                                            </tr>
+                                        </ui:repeat>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div style="margin-top: 1.5rem;">
+                                <h:commandButton value="💾 Enregistrer toutes les notes"
+                                                 action="#{gradesBean.saveAll}"
+                                                 styleClass="btn-primary"/>
+                            </div>
+                        </c:if>
+                    </div>
+                </h:form>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

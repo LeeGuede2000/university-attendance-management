@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="3.0"
+             xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+                                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+    <persistence-unit name="attendancePU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+
+        <class>liten.attendance.domain.Account</class>
+        <class>liten.attendance.domain.AccountType</class>
+        <class>liten.attendance.domain.Client</class>
+        <class>liten.attendance.domain.ClientType</class>
+        <class>liten.attendance.domain.Student</class>
+        <class>liten.attendance.domain.Faculty</class>
+        <class>liten.attendance.domain.Course</class>
+        <class>liten.attendance.domain.CauseType</class>
+        <class>liten.attendance.domain.Attendance</class>
+        <class>liten.attendance.domain.StudentAttendance</class>
+        <class>liten.attendance.domain.StudentAttendancePK</class>
+        <class>liten.attendance.domain.AbsenceJustification</class>
+        <class>liten.attendance.domain.AbsenceJustificationPK</class>
+        <class>liten.attendance.domain.Notification</class>
+        <class>liten.attendance.domain.Rules</class>
+        <class>liten.attendance.domain.RulesType</class>
+        <class>liten.attendance.domain.Action</class>
+        <class>liten.attendance.domain.Event</class>
+        <class>liten.attendance.domain.EventType</class>
+        <class>liten.attendance.domain.Term</class>
+        <class>liten.attendance.domain.Period</class>
+        <class>liten.attendance.domain.TermPeriod</class>
+        <class>liten.attendance.domain.TermPeriodPK</class>
+        <class>liten.attendance.domain.EnrolledCourseGrade</class>
+        <class>liten.attendance.domain.GradeLookup</class>
+
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver"
+                      value="com.mysql.cj.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url"
+                      value="jdbc:mysql://localhost:3306/attendance?useSSL=false&amp;serverTimezone=UTC&amp;allowPublicKeyRetrieval=true"/>
+            <property name="jakarta.persistence.jdbc.user"
+                      value="YOUR_USER"/>
+            <property name="jakarta.persistence.jdbc.password"
+                      value="YOUR_PASSWORD"/>
+
+            <property name="jakarta.persistence.schema-generation.database.action"
+                      value="none"/>
+
+            <property name="eclipselink.logging.level" value="INFO"/>
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>

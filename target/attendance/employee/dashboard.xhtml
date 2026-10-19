@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Dashboard Employee</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .container { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+            .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+            .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; }
+            .stat-card .number { font-size: 2.2rem; font-weight: 800; color: #0891b2; margin: 0.3rem 0; }
+            .stat-card .label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0 0 1rem; color: #0891b2; font-size: 1.2rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #ecfeff; padding: 0.7rem; text-align: left; font-size: 0.85rem; color: #0891b2; border-bottom: 2px solid #06b6d4; }
+            td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #f1f5f9; font-size: 0.92rem; }
+            .pill { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 999px; background: #cffafe; color: #0891b2; font-size: 0.85rem; font-weight: 600; }
+            .event-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; color: white; font-size: 0.8rem; font-weight: 600; }
+            .btn-action { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+            .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            .hint { color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0 1rem; font-style: italic; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1>🏛️ Dashboard Employee - #{employeeDashboardBean.employeeName}</h1>
+                <div>
+                    <span>#{employeeDashboardBean.employeeDirection}</span>
+                    <h:form style="display: inline; margin-left: 1rem;">
+                        <h:commandButton value="Déconnexion"
+                                         action="#{loginBean.doLogout}"
+                                         styleClass="btn-logout"/>
+                    </h:form>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <!-- Compteurs globaux -->
+                <div class="grid-cards">
+                    <div class="stat-card">
+                        <div class="label">Événements</div>
+                        <div class="number">#{employeeDashboardBean.totalEvents}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Types d'événements</div>
+                        <div class="number">#{employeeDashboardBean.totalEventTypes}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Étudiants</div>
+                        <div class="number">#{employeeDashboardBean.totalStudents}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Sessions</div>
+                        <div class="number">#{employeeDashboardBean.totalAttendances}</div>
+                    </div>
+                </div>
+
+                <!-- Actions rapides (CRUDs) -->
+                <div class="card">
+                    <h2>🚀 Actions rapides</h2>
+                    <h:outputLink value="events.xhtml" styleClass="btn-action">📅 Gérer les événements</h:outputLink>
+                </div>
+
+                <!-- Stats par type d'événement -->
+                <div class="card">
+                    <h2>📊 Répartition des événements par type</h2>
+                    <p class="hint">Vue d'ensemble de tous les types d'événements organisés par l'IUGB.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Nombre</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <ui:repeat value="#{employeeDashboardBean.eventTypeStats}" var="et">
+                                <tr>
+                                    <td><span class="pill">#{et.name}</span></td>
+                                    <td><small>#{et.description}</small></td>
+                                    <td><strong>#{et.nbEvents}</strong></td>
+                                </tr>
+                            </ui:repeat>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Événements récents -->
+                <div class="card">
+                    <h2>📅 Événements récents (#{employeeDashboardBean.recentEvents.size()})</h2>
+                    <p class="hint">Les 20 derniers événements organisés. Cliquer "Gérer les événements" pour ajouter/modifier.</p>
+                    <c:if test="#{empty employeeDashboardBean.recentEvents}">
+                        <p style="color: #94a3b8; text-align: center; padding: 2rem;">
+                            Aucun événement enregistré.
+                        </p>
+                    </c:if>
+                    <c:if test="#{not empty employeeDashboardBean.recentEvents}">
+                        <div style="max-height: 500px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <table>
+                                <thead style="position: sticky; top: 0; z-index: 1;">
+                                    <tr>
+                                        <th style="background:#ecfeff;">Type</th>
+                                        <th style="background:#ecfeff;">Nom</th>
+                                        <th style="background:#ecfeff;">Description</th>
+                                        <th style="background:#ecfeff;">Horaire</th>
+                                        <th style="background:#ecfeff;">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ui:repeat value="#{employeeDashboardBean.recentEvents}" var="ev">
+                                        <tr>
+                                            <td><span class="event-tag" style="background-color: #{ev.color};">#{ev.typeName}</span></td>
+                                            <td><strong>#{ev.name}</strong></td>
+                                            <td><small style="color: #64748b;">#{ev.description}</small></td>
+                                            <td>
+                                                <small>
+                                                    <c:if test="#{not empty ev.dayName}">
+                                                        #{ev.dayName} · 
+                                                    </c:if>
+                                                    #{ev.schedule}
+                                                </small>
+                                            </td>
+                                            <td><small>#{ev.createdDate}</small></td>
+                                        </tr>
+                                    </ui:repeat>
+                                </tbody>
+                            </table>
+                        </div>
+                    </c:if>
+                </div>
+
+           
+
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

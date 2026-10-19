@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Dashboard Manager</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #c2410c 0%, #f59e0b 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .container { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+            .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+            .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; }
+            .stat-card .number { font-size: 2.2rem; font-weight: 800; color: #c2410c; margin: 0.3rem 0; }
+            .stat-card .label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0 0 1rem; color: #c2410c; font-size: 1.2rem; }
+            .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #fff7ed; padding: 0.7rem; text-align: left; font-size: 0.85rem; color: #c2410c; border-bottom: 2px solid #f59e0b; }
+            td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #f1f5f9; font-size: 0.92rem; }
+            .pill { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 999px; background: #fef3c7; color: #b45309; font-size: 0.85rem; font-weight: 600; }
+            .alert-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; color: white; font-size: 0.8rem; font-weight: 600; }
+            .btn-action { background: linear-gradient(135deg, #c2410c 0%, #f59e0b 100%); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+            .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            .filter-bar { background: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+            select { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; }
+            .compare-card { background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%); padding: 1.5rem; border-radius: 12px; border: 2px solid #f59e0b; }
+            .compare-val { font-size: 1.4rem; font-weight: 800; color: #c2410c; }
+            .evolution { padding: 0.5rem 1rem; border-radius: 999px; font-weight: 700; font-size: 0.9rem; display: inline-block; margin-top: 0.5rem; }
+            .evol-up { background: #fee2e2; color: #991b1b; }
+            .evol-down { background: #dcfce7; color: #166534; }
+            .hint { color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0 1rem; font-style: italic; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1>🏢 Dashboard Manager (Dean) - #{managerDashboardBean.managerName}</h1>
+                <div>
+                    <span>#{managerDashboardBean.managerDirection}</span>
+                    <h:form style="display: inline; margin-left: 1rem;">
+                        <h:commandButton value="Déconnexion"
+                                         action="#{loginBean.doLogout}"
+                                         styleClass="btn-logout"/>
+                    </h:form>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <!-- Filtre Term/Period -->
+                <h:form>
+                    <div class="filter-bar">
+                        <label><strong>Semestre :</strong></label>
+                        <h:selectOneMenu value="#{managerDashboardBean.selectedTermID}">
+                            <f:selectItem itemLabel="Fall" itemValue="TERM_1"/>
+                            <f:selectItem itemLabel="Spring" itemValue="TERM_2"/>
+                            <f:selectItem itemLabel="Summer" itemValue="TERM_3"/>
+                        </h:selectOneMenu>
+                        <label><strong>Année :</strong></label>
+                        <h:selectOneMenu value="#{managerDashboardBean.selectedPeriodID}">
+                            <f:selectItem itemLabel="2023-2024" itemValue="PER_1"/>
+                            <f:selectItem itemLabel="2024-2025" itemValue="PER_2"/>
+                            <f:selectItem itemLabel="2025-2026" itemValue="PER_3"/>
+                        </h:selectOneMenu>
+                        <h:commandButton value="Actualiser"
+                                         action="#{managerDashboardBean.refresh}"
+                                         style="background: #c2410c; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;"/>
+                    </div>
+                </h:form>
+
+                <!-- Compteurs globaux -->
+                <div class="grid-cards">
+                    <div class="stat-card"><div class="label">Étudiants</div><div class="number">#{managerDashboardBean.totalStudents}</div></div>
+                    <div class="stat-card"><div class="label">Professeurs</div><div class="number">#{managerDashboardBean.totalFaculties}</div></div>
+                    <div class="stat-card"><div class="label">Employés</div><div class="number">#{managerDashboardBean.totalEmployees}</div></div>
+                    <div class="stat-card"><div class="label">Rules</div><div class="number">#{managerDashboardBean.totalRules}</div></div>
+                    <div class="stat-card"><div class="label">Actions</div><div class="number">#{managerDashboardBean.totalActions}</div></div>
+                </div>
+
+                <!-- Actions rapides -->
+                <div class="card">
+                    <h2>🚀 Actions rapides</h2>
+                    <h:outputLink value="rules.xhtml" styleClass="btn-action">📋 Gérer les rules</h:outputLink>
+                </div>
+
+                <!-- Alertes détaillées (déplacées depuis Admin) -->
+                <div class="card">
+                    <h2>⚠️ Alertes détaillées (politique IUGB 3/4/5)</h2>
+                    <p class="hint">Vue complète des alertes — rôle exclusif du Dean.</p>
+                    <div class="grid-cards" style="margin-bottom: 1rem;">
+                        <div class="stat-card" style="border-top: 4px solid #3b82f6;">
+                            <div class="label">PARENT_ALERT (3 abs.)</div>
+                            <div class="number" style="color:#3b82f6;">#{managerDashboardBean.nbParentAlerts}</div>
+                        </div>
+                        <div class="stat-card" style="border-top: 4px solid #f59e0b;">
+                            <div class="label">CONVOCATION (4 abs.)</div>
+                            <div class="number" style="color:#f59e0b;">#{managerDashboardBean.nbConvocations}</div>
+                        </div>
+                        <div class="stat-card" style="border-top: 4px solid #dc2626;">
+                            <div class="label">EXCLUSION (5+ abs.)</div>
+                            <div class="number" style="color:#dc2626;">#{managerDashboardBean.nbExclusions}</div>
+                        </div>
+                    </div>
+                    <c:if test="#{not empty managerDashboardBean.alertStudents}">
+                        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <table>
+                                <thead style="position: sticky; top: 0; z-index: 1;">
+                                    <tr>
+                                        <th style="background:#fff7ed;">Étudiant</th>
+                                        <th style="background:#fff7ed;">École</th>
+                                        <th style="background:#fff7ed;">Cours</th>
+                                        <th style="background:#fff7ed;">Absences</th>
+                                        <th style="background:#fff7ed;">Niveau</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ui:repeat value="#{managerDashboardBean.alertStudents}" var="a">
+                                        <tr>
+                                            <td><strong>#{a.fullName}</strong><br/><small style="color:#94a3b8;">#{a.matricule}</small></td>
+                                            <td><span class="pill">#{a.school}</span></td>
+                                            <td><span class="pill">#{a.courseCode}</span></td>
+                                            <td><strong>#{a.nbAbsences}</strong></td>
+                                            <td><span class="alert-tag" style="background-color: #{a.alertColor};">#{a.alertLevel}</span></td>
+                                        </tr>
+                                    </ui:repeat>
+                                </tbody>
+                            </table>
+                        </div>
+                    </c:if>
+                </div>
+
+                <!-- Year-over-year corrigé -->
+                <div class="card">
+                    <h2>📊 Évolution year-over-year</h2>
+                    <div class="grid-two">
+                        <div class="compare-card">
+                            <h3 style="margin: 0 0 1rem; color: #c2410c;">Année 2024-2025</h3>
+                            <p>Absences : <span class="compare-val" style="color:#94a3b8;">#{managerDashboardBean.lastYearAbsences}</span></p>
+                        </div>
+                        <div class="compare-card">
+                            <h3 style="margin: 0 0 1rem; color: #c2410c;">Année 2025-2026</h3>
+                            <p>Absences : <span class="compare-val">#{managerDashboardBean.currentYearAbsences}</span></p>
+                            <span class="evolution #{managerDashboardBean.evolutionPct > 0 ? 'evol-up' : 'evol-down'}">
+                                #{managerDashboardBean.evolutionPct > 0 ? '+' : ''}#{managerDashboardBean.evolutionPct}% vs 2024-2025
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats par école -->
+                <div class="card">
+                    <h2>🏫 Statistiques par école (Féminin vs Masculin)</h2>
+                    <p class="hint">Pour le semestre sélectionné.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>École</th>
+                                <th>Total sessions</th>
+                                <th>Présents</th>
+                                <th>Taux global</th>
+                                <th>Taux Féminin</th>
+                                <th>Taux Masculin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <ui:repeat value="#{managerDashboardBean.statsBySchool}" var="s">
+                                <tr>
+                                    <td><span class="pill">#{s.school}</span></td>
+                                    <td>#{s.total}</td>
+                                    <td>#{s.presents}</td>
+                                    <td><strong style="color:#16a34a;">#{s.formattedPct}</strong></td>
+                                    <td><strong style="color:#ec4899;">#{s.formattedFemalePct}</strong></td>
+                                    <td><strong style="color:#3b82f6;">#{s.formattedMalePct}</strong></td>
+                                </tr>
+                            </ui:repeat>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Stats par niveau académique -->
+                <div class="card">
+                    <h2>🎓 Statistiques par niveau académique</h2>
+                    <p class="hint">Freshman, Sophomore, Junior, Senior — pour le semestre sélectionné.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Niveau</th>
+                                <th>Sessions</th>
+                                <th>Présents</th>
+                                <th>Absences</th>
+                                <th>Taux</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <ui:repeat value="#{managerDashboardBean.statsByLevel}" var="l">
+                                <tr>
+                                    <td><span class="pill">#{l.level}</span></td>
+                                    <td>#{l.total}</td>
+                                    <td style="color:#16a34a;"><strong>#{l.presents}</strong></td>
+                                    <td style="color:#dc2626;"><strong>#{l.absences}</strong></td>
+                                    <td><strong>#{l.formattedPct}</strong></td>
+                                </tr>
+                            </ui:repeat>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Performances des professeurs -->
+                <div class="card">
+                    <h2>👨‍🏫 Performances des professeurs</h2>
+                    <p class="hint">Taux de présence par professeur pour le semestre sélectionné, du meilleur au moins bon.</p>
+                    <div style="max-height: 450px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <table>
+                            <thead style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="background:#fff7ed;">Professeur</th>
+                                    <th style="background:#fff7ed;">Département</th>
+                                    <th style="background:#fff7ed;">Cours</th>
+                                    <th style="background:#fff7ed;">Sessions</th>
+                                    <th style="background:#fff7ed;">Absences</th>
+                                    <th style="background:#fff7ed;">Taux présence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{managerDashboardBean.facultyPerformances}" var="fp">
+                                    <tr>
+                                        <td><strong>#{fp.fullName}</strong></td>
+                                        <td><span class="pill">#{fp.department}</span></td>
+                                        <td>#{fp.nbCourses}</td>
+                                        <td>#{fp.totalSessions}</td>
+                                        <td><strong style="color:#dc2626;">#{fp.totalAbsences}</strong></td>
+                                        <td><strong style="color: #{fp.rateColor};">#{fp.formattedRate}</strong></td>
+                                    </tr>
+                                </ui:repeat>
+                                <c:if test="#{empty managerDashboardBean.facultyPerformances}">
+                                    <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:1.5rem;">Aucune donnée.</td></tr>
+                                </c:if>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Performances des étudiants -->
+                <div class="card">
+                    <h2>👨‍🎓 Performances des étudiants (50 les moins présents)</h2>
+                    <p class="hint">Étudiants triés du moins présent au plus présent — pour le semestre sélectionné.</p>
+                    <div style="max-height: 450px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <table>
+                            <thead style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="background:#fff7ed;">Étudiant</th>
+                                    <th style="background:#fff7ed;">Matricule</th>
+                                    <th style="background:#fff7ed;">École</th>
+                                    <th style="background:#fff7ed;">Niveau</th>
+                                    <th style="background:#fff7ed;">Sessions</th>
+                                    <th style="background:#fff7ed;">Absences</th>
+                                    <th style="background:#fff7ed;">Taux</th>
+                                    <th style="background:#fff7ed;">Alerte</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{managerDashboardBean.studentPerformances}" var="sp">
+                                    <tr>
+                                        <td><strong>#{sp.fullName}</strong></td>
+                                        <td><small style="color:#94a3b8;">#{sp.matricule}</small></td>
+                                        <td><span class="pill">#{sp.school}</span></td>
+                                        <td><span class="pill">#{sp.level}</span></td>
+                                        <td>#{sp.totalSessions}</td>
+                                        <td><strong style="color:#dc2626;">#{sp.totalAbsences}</strong></td>
+                                        <td><strong style="color: #{sp.rateColor};">#{sp.formattedRate}</strong></td>
+                                        <td>
+                                            <span class="alert-tag" style="background-color: #{sp.alertColor}; #{empty sp.alertLevel ? 'background:none; color:#16a34a;' : ''}">
+                                                #{empty sp.alertLevel ? '✓ OK' : sp.alertLevel}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </ui:repeat>
+                                <c:if test="#{empty managerDashboardBean.studentPerformances}">
+                                    <tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:1.5rem;">Aucune donnée.</td></tr>
+                                </c:if>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Classification par cause -->
+               <div class="card">
+    <h2>📋 Classification des justifications par cause</h2>
+    <p class="hint">Répartition des raisons d'absence avec catégorie : Administratif / Sanctionnel / Événementiel.</p>
+    <c:if test="#{empty managerDashboardBean.statsByCause}">
+        <p style="color: #94a3b8; text-align: center; padding: 1.5rem;">Aucune justification déposée.</p>
+    </c:if>
+    <c:if test="#{not empty managerDashboardBean.statsByCause}">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cause</th>
+                    <th>Catégorie</th>
+                    <th>Description</th>
+                    <th>Nombre</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ui:repeat value="#{managerDashboardBean.statsByCause}" var="c">
+                    <tr>
+                        <td><span class="pill">#{c.causeName}</span></td>
+                        <td>
+                            <span class="alert-tag" style="background-color: #{c.categoryColor};">
+                                #{c.category}
+                            </span>
+                        </td>
+                        <td><small>#{c.description}</small></td>
+                        <td><strong>#{c.nbJustifications}</strong></td>
+                    </tr>
+                </ui:repeat>
+            </tbody>
+        </table>
+    </c:if>
+</div>
+
+                <!-- Stats par cours -->
+                <div class="card">
+                    <h2>📚 Statistiques par cours</h2>
+                    <p class="hint">Taux de présence et absences par cours pour le semestre sélectionné.</p>
+                    <div style="max-height: 450px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <table>
+                            <thead style="position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="background:#fff7ed;">Code</th>
+                                    <th style="background:#fff7ed;">Cours</th>
+                                    <th style="background:#fff7ed;">École</th>
+                                    <th style="background:#fff7ed;">Sessions</th>
+                                    <th style="background:#fff7ed;">Absences</th>
+                                    <th style="background:#fff7ed;">Taux présence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{managerDashboardBean.courseStats}" var="cs">
+                                    <tr>
+                                        <td><span class="pill">#{cs.code}</span></td>
+                                        <td>#{cs.name}</td>
+                                        <td><span class="pill">#{cs.school}</span></td>
+                                        <td>#{cs.totalSessions}</td>
+                                        <td><strong style="color:#dc2626;">#{cs.totalAbsences}</strong></td>
+                                        <td><strong style="color: #{cs.rateColor};">#{cs.formattedRate}</strong></td>
+                                    </tr>
+                                </ui:repeat>
+                                <c:if test="#{empty managerDashboardBean.courseStats}">
+                                    <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:1.5rem;">Aucune donnée.</td></tr>
+                                </c:if>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Évolution mensuelle -->
+                <div class="card">
+                    <h2>📅 Évolution mensuelle des absences</h2>
+                    <table>
+                        <thead>
+                            <tr><th>Mois</th><th>Absences</th></tr>
+                        </thead>
+                        <tbody>
+                            <ui:repeat value="#{managerDashboardBean.monthStats}" var="m">
+                                <tr>
+                                    <td><span class="pill">#{m.yearMonth}</span></td>
+                                    <td><strong>#{m.nbAbsences}</strong></td>
+                                </tr>
+                            </ui:repeat>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

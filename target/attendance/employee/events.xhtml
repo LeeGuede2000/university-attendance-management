@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Gestion des Événements</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; }
+            .header { background: linear-gradient(135deg, #0e7490 0%, #06b6d4 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; }
+            .container { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #ecfeff; padding: 0.7rem; text-align: left; color: #0e7490; border-bottom: 2px solid #06b6d4; font-size: 0.85rem; }
+            td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+            .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-right: 0.3rem; }
+            .btn-add { background: #16a34a; color: white; }
+            .btn-save { background: #0891b2; color: white; }
+            .btn-edit { background: #3b82f6; color: white; }
+            .btn-delete { background: #dc2626; color: white; }
+            .btn-cancel { background: #94a3b8; color: white; }
+            .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+            label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; }
+            input, select, textarea { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+            textarea { resize: vertical; min-height: 80px; }
+            .badge-type { background: #cffafe; color: #0e7490; padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+            .messages { padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; }
+            .messages.info { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+            .messages.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1 style="margin: 0; font-size: 1.4rem;">🎉 Gestion des Événements</h1>
+                <h:form>
+                    <h:commandButton value="🏠 Dashboard"
+                                     action="dashboard.xhtml?faces-redirect=true"
+                                     style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; margin-right: 0.5rem;"/>
+                    <h:commandButton value="Déconnexion"
+                                     action="#{loginBean.doLogout}"
+                                     style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px;"/>
+                </h:form>
+            </div>
+
+            <div class="container">
+
+                <h:messages globalOnly="true"
+                            infoClass="messages info"
+                            errorClass="messages error"/>
+
+                <!-- Formulaire add/edit -->
+                <c:if test="#{eventBean.selected != null}">
+                    <div class="card" style="border-left: 5px solid #0891b2;">
+                        <h2 style="margin: 0 0 1rem; color: #0e7490;">
+                            #{eventBean.editMode ? '✏️ Modifier' : '➕ Nouvel'} événement
+                        </h2>
+                        <h:form>
+                            <div class="form-grid">
+
+                                <div>
+                                    <label>Nom de l'événement *</label>
+                                    <h:inputText value="#{eventBean.selected.name}"
+                                                 maxlength="150"/>
+                                </div>
+
+                                <div>
+                                    <label>Type d'événement</label>
+                                    <h:selectOneMenu value="#{eventBean.selectedEventTypeID}">
+                                        <f:selectItem itemValue="" itemLabel="-- Sélectionner un type --"/>
+                                        <f:selectItems value="#{eventBean.eventTypes}"
+                                                       var="et"
+                                                       itemValue="#{et.eventTypeID}"
+                                                       itemLabel="#{et.name}"/>
+                                    </h:selectOneMenu>
+                                </div>
+
+                                <div>
+                                    <label>Schedule ID (optionnel)</label>
+                                    <h:inputText value="#{eventBean.selected.scheduleID}"
+                                                 maxlength="50"/>
+                                </div>
+<div style="grid-column: span 2;">
+    <label>Description</label>
+    <h:inputTextarea value="#{eventBean.selected.description}"
+                     rows="3"/>
+</div>
+
+</div>
+                            <div style="margin-top: 1.5rem;">
+                                <h:commandButton value="💾 Enregistrer"
+                                                 action="#{eventBean.save}"
+                                                 styleClass="btn btn-save"/>
+                                <h:commandButton value="Annuler"
+                                                 action="#{eventBean.cancel}"
+                                                 styleClass="btn btn-cancel"
+                                                 immediate="true"/>
+                            </div>
+                        </h:form>
+                    </div>
+                </c:if>
+
+                <!-- Liste -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2 style="margin: 0; color: #0e7490;">📋 Événements (#{eventBean.events.size()})</h2>
+                        <h:form>
+                            <h:commandButton value="➕ Nouvel événement"
+                                             action="#{eventBean.prepareAdd}"
+                                             styleClass="btn btn-add"/>
+                        </h:form>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Schedule</th>
+                                <th>Date création</th>
+                                <th>Opérations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <ui:repeat value="#{eventBean.events}" var="ev">
+                                <tr>
+                                    <td>#{ev.eventID}</td>
+                                    <td><strong>#{ev.name}</strong></td>
+                                   <td>
+    <span class="badge-type" style="#{ev.eventType == null ? 'background:none;color:#9ca3af;' : ''}">
+        #{ev.eventType != null ? ev.eventType.name : '—'}
+    </span>
+</td>
+                                  <td>
+    <small style="color: #{empty ev.description ? '#9ca3af' : '#475569'};">
+        #{empty ev.description ? '—' : ev.description}
+    </small>
+</td>
+                                    <td>#{not empty ev.scheduleID ? ev.scheduleID : '—'}</td>
+                                    <td>
+                                        <h:outputText value="#{ev.createdDate}">
+                                            <f:convertDateTime pattern="dd/MM/yyyy HH:mm" timeZone="UTC"/>
+                                        </h:outputText>
+                                    </td>
+                                    <td>
+                                        <h:form style="display: inline;">
+                                            <h:commandButton value="✏️"
+                                                             action="#{eventBean.prepareEdit(ev)}"
+                                                             styleClass="btn btn-edit"/>
+                                           <h:commandButton value="🚫 Désactiver"
+                 action="#{eventBean.delete(ev)}"
+                 styleClass="btn btn-delete"
+                 onclick="return confirm('Désactiver cet événement ? Il ne sera plus visible mais les données sont conservées.');"/>
+                                        </h:form>
+                                    </td>
+                                </tr>
+                            </ui:repeat>
+                            <c:if test="#{empty eventBean.events}">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: #94a3b8; padding: 2rem;">
+                                        Aucun événement enregistré. Cliquez sur "Nouvel événement" pour commencer.
+                                    </td>
+                                </tr>
+                            </c:if>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

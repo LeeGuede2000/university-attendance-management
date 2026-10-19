@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Dashboard Étudiant</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+            .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+            .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; }
+            .stat-card .number { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; margin: 0.3rem 0; }
+            .stat-card .label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0 0 1rem; color: #1e3a8a; font-size: 1.2rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #f8fafc; padding: 0.6rem; text-align: left; font-size: 0.85rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+            td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+            .btn-action { background: #3b82f6; color: white; border: none; padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; margin-right: 0.5rem; }
+            .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            .alert-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; color: white; font-size: 0.8rem; font-weight: 600; }
+            .filter-bar { background: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+            select { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; }
+            .pill { display: inline-block; padding: 0.15rem 0.7rem; border-radius: 999px; background: #dbeafe; color: #1e3a8a; font-size: 0.8rem; font-weight: 600; }
+            .hint { color: #94a3b8; font-size: 0.85rem; margin: 0.3rem 0 1rem; font-style: italic; }
+            .comparison-box { background: #f8fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 1rem; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn and studentDashboardBean.currentStudent != null}">
+
+            <div class="header">
+                <h1>🎓 #{studentDashboardBean.currentStudent.firstName} #{studentDashboardBean.currentStudent.lastName}</h1>
+                <div>
+                    <span>#{studentDashboardBean.currentStudent.matricule} · #{studentDashboardBean.currentStudent.school} · #{studentDashboardBean.currentStudent.academicLevel}</span>
+                    <h:form style="display: inline; margin-left: 1rem;">
+                        <h:commandButton value="Déconnexion"
+                                         action="#{loginBean.doLogout}"
+                                         styleClass="btn-logout"/>
+                    </h:form>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <!-- Filtre Term/Period -->
+                <h:form>
+                    <div class="filter-bar">
+                        <label><strong>Semestre :</strong></label>
+                        <h:selectOneMenu value="#{studentDashboardBean.selectedTermID}">
+                            <f:selectItem itemLabel="Fall" itemValue="TERM_1"/>
+                            <f:selectItem itemLabel="Spring" itemValue="TERM_2"/>
+                            <f:selectItem itemLabel="Summer" itemValue="TERM_3"/>
+                        </h:selectOneMenu>
+                        <label><strong>Année :</strong></label>
+                        <h:selectOneMenu value="#{studentDashboardBean.selectedPeriodID}">
+                            <f:selectItem itemLabel="2023-2024" itemValue="PER_1"/>
+                            <f:selectItem itemLabel="2024-2025" itemValue="PER_2"/>
+                            <f:selectItem itemLabel="2025-2026" itemValue="PER_3"/>
+                        </h:selectOneMenu>
+                        <h:commandButton value="Actualiser"
+                                         action="#{studentDashboardBean.refresh}"
+                                         style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;"/>
+                    </div>
+                </h:form>
+
+                <!-- Stats perso -->
+                <div class="grid-cards">
+                    <div class="stat-card">
+                        <div class="label">Sessions</div>
+                        <div class="number">#{studentDashboardBean.totalSessions}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Présents</div>
+                        <div class="number" style="color:#16a34a;">#{studentDashboardBean.totalPresents}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Absences</div>
+                        <div class="number" style="color:#dc2626;">#{studentDashboardBean.totalAbsences}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Justifiées</div>
+                        <div class="number" style="color:#16a34a;">#{studentDashboardBean.totalJustified}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Mon taux présence</div>
+                        <div class="number">#{studentDashboardBean.formattedRate}</div>
+                    </div>
+                </div>
+
+                <!-- Comparaison avec l'école -->
+<!-- Graphique Pie Chart performance -->
+<div class="card">
+    <h2>📊 Ma performance vs mon école et toute l'IUGB</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; align-items: center;">
+
+        <!-- Mon taux -->
+        <div style="text-align: center;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.8rem;">Mon taux</div>
+            <svg viewBox="0 0 36 36" style="width: 120px; height: 120px; transform: rotate(-90deg);">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3.8"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e3a8a" stroke-width="3.8"
+                        stroke-dasharray="#{studentDashboardBean.presenceRate} #{100 - studentDashboardBean.presenceRate}"
+                        stroke-linecap="round"/>
+            </svg>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #1e3a8a; margin-top: 0.5rem;">#{studentDashboardBean.formattedRate}</div>
+            <div style="font-size: 0.75rem; color: #94a3b8;">Moi</div>
+        </div>
+
+        <!-- Moyenne école -->
+        <div style="text-align: center;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.8rem;">Moyenne #{studentDashboardBean.currentStudent.school}</div>
+            <svg viewBox="0 0 36 36" style="width: 120px; height: 120px; transform: rotate(-90deg);">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3.8"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#64748b" stroke-width="3.8"
+                        stroke-dasharray="#{studentDashboardBean.schoolAvgPresenceRate} #{100 - studentDashboardBean.schoolAvgPresenceRate}"
+                        stroke-linecap="round"/>
+            </svg>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #64748b; margin-top: 0.5rem;">#{studentDashboardBean.formattedSchoolRate}</div>
+            <div style="font-size: 0.75rem; color: #94a3b8;">#{studentDashboardBean.currentStudent.school}</div>
+        </div>
+
+        <!-- Moyenne IUGB -->
+        <div style="text-align: center;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.8rem;">Moyenne IUGB</div>
+            <svg viewBox="0 0 36 36" style="width: 120px; height: 120px; transform: rotate(-90deg);">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="3.8"/>
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#3b82f6" stroke-width="3.8"
+                        stroke-dasharray="#{studentDashboardBean.globalRate} #{100 - studentDashboardBean.globalRate}"
+                        stroke-linecap="round"/>
+            </svg>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #3b82f6; margin-top: 0.5rem;">#{studentDashboardBean.formattedGlobalRate}</div>
+            <div style="font-size: 0.75rem; color: #94a3b8;">IUGB</div>
+        </div>
+
+    </div>
+
+    <!-- Différentiel -->
+    <div style="text-align: center; padding: 0.8rem; background: #f8fafc; border-radius: 8px; margin-top: 1rem;">
+        <span style="color: #{studentDashboardBean.diffWithSchool >= 0 ? '#16a34a' : '#dc2626'}; font-weight: 700; font-size: 1rem;">
+            #{studentDashboardBean.diffWithSchool >= 0 ? '+' : ''}#{studentDashboardBean.diffWithSchool} pts vs moyenne #{studentDashboardBean.currentStudent.school}
+        </span>
+    </div>
+</div>
+
+             <div class="card">
+    <h2>📚 Mes absences par cours (politique 3/4/5)</h2>
+    <p class="hint">Pour le semestre sélectionné. Les niveaux d'alerte sont basés sur la politique IUGB.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Cours</th>
+                <th>Absences</th>
+                <th>Dates des absences</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            <ui:repeat value="#{studentDashboardBean.courseAbsences}" var="c">
+                <tr>
+                    <td><strong>#{c.code}</strong></td>
+                    <td>#{c.name}</td>
+                    <td><strong>#{c.nbAbsences}</strong></td>
+                    <td><strong style="color:#1e3a8a; font-size: 0.85rem;">#{c.dates}</strong></td>                    <td><span class="alert-tag" style="background-color: #{c.color};">#{c.alert}</span></td>
+                </tr>
+            </ui:repeat>
+            <c:if test="#{empty studentDashboardBean.courseAbsences}">
+                <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">✓ Aucune absence sur ce semestre !</td></tr>
+            </c:if>
+        </tbody>
+    </table>
+</div>
+
+                <!-- Actions recommandées par mon advisor -->
+                <div class="card">
+                    <h2>🎯 Actions recommandées par mon advisor</h2>
+                    <p class="hint">Récapitulatif des actions correctives documentées par mon advisor pour mes alertes 3/4/5.</p>
+                    <c:if test="#{empty studentDashboardBean.advisorActions}">
+                        <p style="color: #94a3b8; text-align: center; padding: 1.5rem;">
+                            ✓ Aucune action en cours. Continuez ainsi !
+                        </p>
+                    </c:if>
+                    <c:if test="#{not empty studentDashboardBean.advisorActions}">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Cours</th>
+                                    <th>Action</th>
+                                    <th>Abs.</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{studentDashboardBean.advisorActions}" var="act">
+                                    <tr>
+                                        <td><small>#{act.actionDate}</small></td>
+                                        <td><span class="pill">#{act.courseCode}</span></td>
+                                        <td>
+                                            <strong>#{act.name}</strong><br/>
+                                            <small style="color:#475569;">#{act.content}</small>
+                                        </td>
+                                        <td><strong>#{act.nbAbsences}</strong></td>
+                                        <td>
+                                            <span class="alert-tag" style="background-color: #{act.statusColor};">
+                                                #{act.statusBadge}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </ui:repeat>
+                            </tbody>
+                        </table>
+                    </c:if>
+                </div>
+
+       <!-- Mes justifications déposées -->
+<div class="card">
+    <h2>📋 Mes justifications déposées (#{studentDashboardBean.myJustifications.size()})</h2>
+    <p class="hint">Workflow : Submitted → AdvisorApproved → Approved/Rejected. Le prof a le mot final.</p>
+    <c:if test="#{empty studentDashboardBean.myJustifications}">
+        <p style="color: #94a3b8; text-align: center; padding: 1.5rem;">
+            Aucune justification déposée.
+        </p>
+    </c:if>
+    <c:if test="#{not empty studentDashboardBean.myJustifications}">
+        <div style="max-height: 450px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <table>
+                <thead style="position: sticky; top: 0; z-index: 1;">
+                    <tr>
+                        <th style="background:#f8fafc;">Date dépôt</th>
+                        <th style="background:#f8fafc;">Cours</th>
+                        <th style="background:#f8fafc;">Raison</th>
+                        <th style="background:#f8fafc;">Statut</th>
+                        <th style="background:#f8fafc;">Commentaires advisor + prof</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <ui:repeat value="#{studentDashboardBean.myJustifications}" var="j">
+                        <tr>
+                            <td><small>#{j.createdDate}</small></td>
+                            <td><span class="pill">#{j.courseCode}</span></td>
+                            <td><small>#{j.reasons}</small></td>
+                            <td>
+                                <span class="alert-tag" style="background-color: #{j.statusColor};">
+                                    #{j.status}
+                                </span>
+                            </td>
+                            <td style="font-size: 0.82rem;">
+                                <div style="margin-bottom: 4px;">
+                                    <strong style="color:#1e3a8a;">Advisor :</strong>
+                                    <em>#{empty j.advisorComments ? '— (en attente)' : j.advisorComments}</em>
+                                </div>
+                                <div>
+                                    <strong style="color:#16a34a;">Prof :</strong>
+                                    <em>#{empty j.facultyComments ? '— (en attente)' : j.facultyComments}</em>
+                                </div>
+                            </td>
+                        </tr>
+                    </ui:repeat>
+                </tbody>
+            </table>
+        </div>
+    </c:if>
+</div>
+
+                <!-- Actions rapides -->
+                <div class="card">
+                    <h2>🚀 Actions rapides</h2>
+                    <h:outputLink value="myAbsences.xhtml" styleClass="btn-action">📋 Déposer une justification</h:outputLink>
+                </div>
+
+                <!-- Notifications -->
+                <div class="card">
+                    <h2>🔔 Notifications récentes</h2>
+                    <table>
+                        <thead>
+                            <tr><th>Type</th><th>Sujet</th><th>Date</th></tr>
+                        </thead>
+                        <tbody>
+                            <ui:repeat value="#{studentDashboardBean.recentNotifications}" var="n">
+                                <tr>
+                                    <td><span class="pill">#{n[0]}</span></td>
+                                    <td>#{n[1]}</td>
+                                    <td><small>#{n[2]}</small></td>
+                                </tr>
+                            </ui:repeat>
+                            <c:if test="#{empty studentDashboardBean.recentNotifications}">
+                                <tr><td colspan="3" style="text-align: center; color: #94a3b8;">Aucune notification.</td></tr>
+                            </c:if>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

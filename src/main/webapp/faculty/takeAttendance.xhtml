@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="jakarta.faces.passthrough">
+    <h:head>
+        <title>Prise de présence - Attendance App</title>
+        <style>
+            * { box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .header .user { font-size: 0.9rem; opacity: 0.9; }
+            .container { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0 0 1rem; color: #1e3a8a; font-size: 1.2rem; }
+            .form-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+            .form-group { flex: 1; min-width: 200px; }
+            label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; }
+            select, input { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+            select:focus, input:focus { outline: none; border-color: #3b82f6; }
+            table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+            th { background: #f8fafc; padding: 0.7rem; text-align: left; font-size: 0.85rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+            td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+            tr:hover { background: #f8fafc; }
+            .empty-state { text-align: center; color: #94a3b8; padding: 2rem; font-style: italic; }
+            .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; border: none; padding: 0.7rem 1.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; }
+            .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            .message-info, .message-error { padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; }
+            .message-info { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+            .message-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1>Prise de présence</h1>
+                <div>
+                    <span class="user">#{sessionManager.currentUserName}</span>
+                    <h:form style="display: inline; margin-left: 1rem;">
+                        <h:commandButton value="Déconnexion"
+                                         action="#{loginBean.doLogout}"
+                                         styleClass="btn-logout"/>
+                    </h:form>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <h:messages globalOnly="true"
+                            infoClass="message-info"
+                            errorClass="message-error"/>
+
+                <!-- SECTION 1 : Sélection de la séance -->
+                <div class="card">
+                    <h2>1. Sélection de la séance</h2>
+
+                    <h:form id="courseForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cours</label>
+                                <h:selectOneMenu value="#{takeAttendanceBean.selectedCourseId}">
+                                    <f:selectItem itemLabel="-- Choisir un cours --" itemValue=""/>
+                                    <f:selectItems value="#{takeAttendanceBean.availableCourses}"
+                                                   var="c"
+                                                   itemValue="#{c.courseID}"
+                                                   itemLabel="#{c.code} - #{c.name}"/>
+                                    <f:ajax listener="#{takeAttendanceBean.onCourseSelected}"
+                                            render=":studentForm"/>
+                                </h:selectOneMenu>
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <h:inputText value="#{takeAttendanceBean.sessionDate}" pt:type="date">
+                                    <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+                                </h:inputText>
+                            </div>
+                            <div class="form-group">
+                                <label>Heure début</label>
+                                <h:inputText value="#{takeAttendanceBean.startHour}" pt:type="time">
+                                    <f:convertDateTime type="localTime" pattern="HH:mm"/>
+                                </h:inputText>
+                            </div>
+                            <div class="form-group">
+                                <label>Heure fin</label>
+                                <h:inputText value="#{takeAttendanceBean.endHour}" pt:type="time">
+                                    <f:convertDateTime type="localTime" pattern="HH:mm"/>
+                                </h:inputText>
+                            </div>
+                        </div>
+                    </h:form>
+                </div>
+
+                <!-- SECTION 2 : Liste des étudiants -->
+                <h:form id="studentForm" enctype="multipart/form-data">
+
+                    <div class="card">
+                        <h2>2. Présences (#{takeAttendanceBean.studentRows.size()} étudiants)</h2>
+
+                        <c:if test="#{empty takeAttendanceBean.studentRows}">
+                            <div class="empty-state">
+                                Sélectionnez un cours pour voir la liste des étudiants
+                            </div>
+                        </c:if>
+
+                        <c:if test="#{not empty takeAttendanceBean.studentRows}">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Matricule</th>
+                                        <th>Nom complet</th>
+                                        <th>École</th>
+                                        <th style="text-align: center;">Présent ?</th>
+                                        <th style="text-align: center;">En retard ?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ui:repeat value="#{takeAttendanceBean.studentRows}" var="row">
+                                        <tr>
+                                            <td>#{row.student.matricule}</td>
+                                            <td>#{row.student.firstName} #{row.student.lastName}</td>
+                                            <td>#{row.student.school}</td>
+                                          <td style="text-align: center;">
+    <h:selectBooleanCheckbox value="#{row.present}"
+                             onclick="if(this.checked){ var late=this.closest('tr').querySelector('.cb-late'); if(late) late.checked=false; }"/>
+</td>
+<td style="text-align: center;">
+    <h:selectBooleanCheckbox value="#{row.late}"
+                             styleClass="cb-late"
+                             onclick="if(this.checked){ var pres=this.closest('tr').querySelector('input[type=checkbox]:not(.cb-late)'); if(pres){ pres.checked=false; } }"/>
+</td>
+                                        </tr>
+                                    </ui:repeat>
+                                </tbody>
+                            </table>
+                        </c:if>
+                    </div>
+
+                    <!-- SECTION 3 : Photo + validation -->
+                    <c:if test="#{not empty takeAttendanceBean.studentRows}">
+                        <div class="card">
+                            <h2>3. Photo de la liste (preuve)</h2>
+                            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">
+                                Uploadez une photo de la liste signée ou un screenshot pour justifier la présence.
+                            </p>
+                    <p:fileUpload value="#{takeAttendanceBean.uploadedPicture}"
+                                  mode="simple"
+                                  accept="image/*"
+                                  skinSimple="true"
+                                  pt:onchange="showPreview(this)"/>
+
+                    <div id="picturePreview" style="margin-top: 1rem;"></div>
+
+                    <script type="text/javascript">
+                        /* <![CDATA[ */
+                        function showPreview(input) {
+                               var preview = document.getElementById('picturePreview');
+                                if (!input.files || !input.files[0]) {
+                                    preview.innerHTML = '';
+                                    return;
+                                  }
+                                  var file = input.files[0];
+                                  var sizeKB = Math.round(file.size / 1024);
+
+                                preview.innerHTML =
+                                     '<div style="padding: 0.8rem 1rem; background: #dcfce7; border-left: 4px solid #22c55e; ' +
+                                     'border-radius: 6px; color: #166534; font-size: 0.9rem;">' +
+                                    '✓ Fichier sélectionné : <strong>' + file.name + '</strong> (' + sizeKB + ' KB)' +
+                                     '</div>';
+
+        if (file.type.indexOf('image/') === 0) {
+            var reader = new FileReader();
+            reader.onload = function(evt) {
+                preview.innerHTML +=
+                    '<div style="margin-top: 0.8rem;">' +
+                    '<img src="' + evt.target.result + '" alt="Aperçu" ' +
+                    'style="max-width: 250px; max-height: 250px; border-radius: 8px; ' +
+                    'box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid #e2e8f0;" />' +
+                    '</div>';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    /* ]]> */
+</script>
+                    
+                    <div style="margin-top: 1rem;">
+    <label><strong>Photo 2 (optionnel)</strong></label>
+    <p:fileUpload value="#{takeAttendanceBean.uploadedPicture2}"
+                  mode="simple"
+                  accept="image/*"
+                  skinSimple="true"
+                  pt:onchange="showPreview2(this)"/>
+    <div id="picturePreview2" style="margin-top: 0.5rem;"></div>
+    <script type="text/javascript">
+        /* <![CDATA[ */
+        function showPreview2(input) {
+            var preview = document.getElementById('picturePreview2');
+            if (!input.files || !input.files[0]) { preview.innerHTML = ''; return; }
+            var file = input.files[0];
+            var sizeKB = Math.round(file.size / 1024);
+            preview.innerHTML = '<div style="padding: 0.8rem 1rem; background: #dcfce7; border-left: 4px solid #22c55e; border-radius: 6px; color: #166534; font-size: 0.9rem;">✓ Photo 2 : <strong>' + file.name + '</strong> (' + sizeKB + ' KB)</div>';
+            if (file.type.indexOf('image/') === 0) {
+                var reader = new FileReader();
+                reader.onload = function(evt) {
+                    preview.innerHTML += '<div style="margin-top: 0.8rem;"><img src="' + evt.target.result + '" alt="Aperçu 2" style="max-width: 250px; max-height: 250px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid #e2e8f0;" /></div>';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        /* ]]> */
+    </script>
+</div>
+                            <div style="margin-top: 1.5rem;">
+                                <h:commandButton value="Valider la présence"
+                                                 action="#{takeAttendanceBean.validateAttendance}"
+                                                 styleClass="btn-primary"/>
+                            </div>
+                        </div>
+                    </c:if>
+
+                </h:form>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

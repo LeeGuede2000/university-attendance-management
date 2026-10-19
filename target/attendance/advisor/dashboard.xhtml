@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Dashboard Advisor</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .container { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+            .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+            .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; }
+            .stat-card .number { font-size: 2.2rem; font-weight: 800; color: #7c3aed; margin: 0.3rem 0; }
+            .stat-card .label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0 0 1rem; color: #7c3aed; font-size: 1.2rem; }
+            .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #f5f3ff; padding: 0.7rem; text-align: left; font-size: 0.85rem; color: #6d28d9; border-bottom: 2px solid #a855f7; }
+            td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #f1f5f9; font-size: 0.92rem; }
+            .pill { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 999px; background: #ede9fe; color: #6d28d9; font-size: 0.85rem; font-weight: 600; }
+            .alert-tag { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; color: white; font-size: 0.75rem; font-weight: 600; margin: 0.1rem; }
+            .btn-action { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; margin-right: 0.5rem; }
+            .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            .student-row { background: #fafbfc; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; }
+            .student-name { font-weight: 700; color: #6d28d9; font-size: 1.05rem; }
+            .student-meta { color: #64748b; font-size: 0.85rem; margin-top: 0.2rem; }
+            .compare-card { background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 1.5rem; border-radius: 12px; border: 2px solid #a855f7; }
+            .compare-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; }
+            .compare-val { font-size: 1.4rem; font-weight: 800; color: #6d28d9; }
+            .evolution { padding: 0.5rem 1rem; border-radius: 999px; font-weight: 700; font-size: 0.9rem; }
+            .evol-up { background: #fee2e2; color: #991b1b; }
+            .evol-down { background: #dcfce7; color: #166534; }
+            .quick-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+            .filter-bar { background: white; padding: 1rem 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+            select { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1>🎓 Dashboard Advisor</h1>
+                <div>
+                    <c:if test="#{advisorDashboardBean.currentAdvisor != null}">
+                        <span>#{advisorDashboardBean.currentAdvisor.firstName} #{advisorDashboardBean.currentAdvisor.lastName} · #{advisorDashboardBean.currentAdvisor.departmentName}</span>
+                    </c:if>
+                    <h:form style="display: inline; margin-left: 1rem;">
+                        <h:commandButton value="Déconnexion"
+                                         action="#{loginBean.doLogout}"
+                                         styleClass="btn-logout"/>
+                    </h:form>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <c:if test="#{advisorDashboardBean.currentAdvisor == null}">
+                    <div class="card">
+                        <p style="color: #94a3b8; text-align: center; padding: 2rem;">
+                            Cette page est réservée aux academic advisors.
+                        </p>
+                    </div>
+                </c:if>
+
+                <c:if test="#{advisorDashboardBean.currentAdvisor != null}">
+
+                    <!-- Filtre Term/Period -->
+                    <h:form>
+                        <div class="filter-bar">
+                            <label><strong>Semestre :</strong></label>
+                            <h:selectOneMenu value="#{advisorDashboardBean.selectedTermID}">
+                                <f:selectItem itemLabel="Fall" itemValue="TERM_1"/>
+                                <f:selectItem itemLabel="Spring" itemValue="TERM_2"/>
+                                <f:selectItem itemLabel="Summer" itemValue="TERM_3"/>
+                            </h:selectOneMenu>
+                            <label><strong>Année :</strong></label>
+                            <h:selectOneMenu value="#{advisorDashboardBean.selectedPeriodID}">
+                                <f:selectItem itemLabel="2023-2024" itemValue="PER_1"/>
+                                <f:selectItem itemLabel="2024-2025" itemValue="PER_2"/>
+                                <f:selectItem itemLabel="2025-2026" itemValue="PER_3"/>
+                            </h:selectOneMenu>
+                            <h:commandButton value="Actualiser"
+                                             action="#{advisorDashboardBean.refresh}"
+                                             style="background: #7c3aed; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600;"/>
+                        </div>
+                    </h:form>
+
+                    <!-- Compteurs alerte -->
+                    <div class="grid-cards">
+                        <div class="stat-card">
+                            <div class="label">Étudiants supervisés</div>
+                            <div class="number">#{advisorDashboardBean.nbSupervised}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Justifs à examiner</div>
+                            <div class="number" style="color:#f59e0b;">#{advisorDashboardBean.nbPendingReviews}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">PARENT_ALERT (3)</div>
+                            <div class="number" style="color:#3b82f6;">#{advisorDashboardBean.nbParentAlerts}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">CONVOCATION (4)</div>
+                            <div class="number" style="color:#f59e0b;">#{advisorDashboardBean.nbConvocations}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">EXCLUSION (5+)</div>
+                            <div class="number" style="color:#dc2626;">#{advisorDashboardBean.nbExclusions}</div>
+                        </div>
+                    </div>
+
+                    <!-- Actions rapides -->
+                    <div class="card">
+                        <h2>🚀 Actions rapides</h2>
+                        <div class="quick-actions">
+                            <h:outputLink value="reviewJustifications.xhtml" styleClass="btn-action">
+                                📋 Examiner les justifications (#{advisorDashboardBean.nbPendingReviews})
+                            </h:outputLink>
+                            <h:outputLink value="actions.xhtml" styleClass="btn-action">
+                                🎯 Gérer mes actions
+                            </h:outputLink>
+                        </div>
+                    </div>
+
+                    <!-- Comparaison annuelle -->
+                    <div class="card">
+                        <h2>📊 Évolution des absences (cette année vs année précédente)</h2>
+                        <div class="grid-two">
+                            <div class="compare-card">
+                                <h3 style="margin: 0 0 1rem; color: #6d28d9;">Année 2025-2026</h3>
+                                <div class="compare-row">
+                                    <span>Absences</span>
+                                    <span class="compare-val">#{advisorDashboardBean.currentYearAbsences}</span>
+                                </div>
+                            </div>
+                            <div class="compare-card">
+                                <h3 style="margin: 0 0 1rem; color: #6d28d9;">Année 2024-2025</h3>
+                                <div class="compare-row">
+                                    <span>Absences</span>
+                                    <span class="compare-val" style="color: #94a3b8;">#{advisorDashboardBean.lastYearAbsences}</span>
+                                </div>
+                                <div class="compare-row">
+                                    <span>Évolution</span>
+                                    <span class="evolution #{advisorDashboardBean.evolutionPct > 0 ? 'evol-up' : 'evol-down'}">
+                                        #{advisorDashboardBean.evolutionPct > 0 ? '+' : ''}#{advisorDashboardBean.evolutionPct}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats par école -->
+                    <div class="card">
+                        <h2>🏫 Statistiques par école (semestre sélectionné)</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>École</th>
+                                    <th>Total sessions</th>
+                                    <th>Présents</th>
+                                    <th>Taux</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{advisorDashboardBean.statsBySchool}" var="s">
+                                    <tr>
+                                        <td><span class="pill">#{s.school}</span></td>
+                                        <td>#{s.total}</td>
+                                        <td>#{s.presents}</td>
+                                        <td><strong style="color: #16a34a;">#{s.formattedPct}</strong></td>
+                                    </tr>
+                                </ui:repeat>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mes étudiants supervisés -->
+                    <div class="card">
+                        <h2>👥 Mes étudiants supervisés (#{advisorDashboardBean.myStudents.size()})</h2>
+
+                        <c:if test="#{empty advisorDashboardBean.myStudents}">
+                            <p style="color: #94a3b8; text-align: center; padding: 2rem;">
+                                Vous n'avez pas encore d'étudiants supervisés assignés.
+                            </p>
+                        </c:if>
+
+                        <div style="max-height: 600px; overflow-y: auto;">
+                            <ui:repeat value="#{advisorDashboardBean.myStudents}" var="stu">
+                                <div class="student-row">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                                        <div>
+                                            <div class="student-name">#{stu.fullName}</div>
+                                            <div class="student-meta">
+                                                <span class="pill">#{stu.matricule}</span>
+                                                <span class="pill">#{stu.school}</span>
+                                                <span class="pill">#{stu.academicLevel}</span>
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="font-size: 1.1rem; font-weight: 700; color: #16a34a;">
+                                                Taux: #{stu.formattedRate}
+                                            </div>
+                                            <div style="font-size: 0.85rem; color: #64748b;">
+                                                #{stu.totalPresents}/#{stu.totalSessions} présent
+                                                (#{stu.totalAbsences} abs.)
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <c:if test="#{stu.hasAlerts}">
+                                        <div style="margin-top: 0.7rem;">
+                                            <strong style="color: #dc2626; font-size: 0.85rem;">⚠️ Alertes :</strong>
+                                            <ui:repeat value="#{stu.courseAlerts}" var="al">
+                                                <span class="alert-tag" style="background-color: #{al.color};">
+                                                    #{al.courseCode}: #{al.nbAbsences} (#{al.alertLevel})
+                                                </span>
+                                            </ui:repeat>
+                                        </div>
+                                    </c:if>
+                                </div>
+                            </ui:repeat>
+                        </div>
+                    </div>
+
+                    <!-- Évolution mensuelle -->
+                    <div class="card">
+                        <h2>📅 Évolution mensuelle des absences (semestre sélectionné)</h2>
+                        <table>
+                            <thead>
+                                <tr><th>Mois</th><th>Absences</th></tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{advisorDashboardBean.monthStats}" var="m">
+                                    <tr>
+                                        <td><span class="pill">#{m.yearMonth}</span></td>
+                                        <td><strong>#{m.nbAbsences}</strong></td>
+                                    </tr>
+                                </ui:repeat>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Actions et follow-up -->
+                    <div class="card">
+                        <h2>📤 Actions et notifications récentes (follow-up)</h2>
+
+                        <c:if test="#{empty advisorDashboardBean.recentActions}">
+                            <p style="color: #94a3b8; text-align: center; padding: 1.5rem;">
+                                Aucune action récente pour vos étudiants supervisés.
+                            </p>
+                        </c:if>
+
+                        <c:if test="#{not empty advisorDashboardBean.recentActions}">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Étudiant</th>
+                                        <th>Cours</th>
+                                        <th>Type</th>
+                                        <th>Sujet</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ui:repeat value="#{advisorDashboardBean.recentActions}" var="a">
+                                        <tr>
+                                            <td>#{a.sentDate}</td>
+                                            <td><strong>#{a.studentName}</strong></td>
+                                            <td><span class="pill">#{a.courseCode}</span></td>
+                                            <td><span class="alert-tag" style="background-color: #{a.color};">#{a.notifType}</span></td>
+                                            <td>#{a.subject}</td>
+                                        </tr>
+                                    </ui:repeat>
+                                </tbody>
+                            </table>
+                        </c:if>
+                    </div>
+
+                </c:if>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>

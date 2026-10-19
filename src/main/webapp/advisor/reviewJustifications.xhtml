@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+    <h:head>
+        <title>Examen des justifications</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; margin: 0; color: #1e293b; }
+            .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 1.4rem; }
+            .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+            .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+            .card h2 { margin: 0; color: #1e3a8a; font-size: 1.2rem; }
+            .justif-block { border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.2rem; margin-bottom: 1rem; background: #fafbfc; }
+            .student-name { font-weight: 700; color: #1e3a8a; font-size: 1.05rem; }
+            .meta { color: #64748b; font-size: 0.85rem; margin-top: 0.2rem; }
+            .badge { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 999px; color: white; font-size: 0.8rem; font-weight: 600; background: #f59e0b; }
+            .info-row { display: grid; grid-template-columns: 130px 1fr; gap: 0.4rem 1rem; margin: 0.8rem 0; font-size: 0.9rem; }
+            .info-label { color: #64748b; font-weight: 600; }
+            .info-value { color: #1e293b; }
+            .reason-box { background: white; border-left: 3px solid #3b82f6; padding: 0.7rem 1rem; border-radius: 4px; font-style: italic; color: #475569; }
+            .actions { margin-top: 1rem; }
+            .btn-review { background: #3b82f6; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+            .btn-accept { background: #16a34a; color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 0.5rem; }
+            .btn-reject { background: #dc2626; color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 0.5rem; }
+            .btn-cancel { background: #e2e8f0; color: #475569; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+            .btn-refresh { background: #f1f5f9; color: #1e3a8a; border: 1px solid #cbd5e1; padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+            .decision-form { background: #f1f5ff; border: 2px solid #3b82f6; border-radius: 10px; padding: 1.5rem; }
+            .decision-form h3 { margin-top: 0; color: #1e3a8a; font-size: 1.05rem; }
+            label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem; margin-top: 0.8rem; }
+            textarea { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; font-family: inherit; resize: vertical; min-height: 70px; }
+            .message-info { background: #dcfce7; color: #166534; padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #22c55e; }
+            .message-error { background: #fee2e2; color: #991b1b; padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #dc2626; }
+            .empty-state { text-align: center; color: #94a3b8; padding: 3rem; font-style: italic; }
+        </style>
+    </h:head>
+    <h:body>
+
+        <c:if test="#{not sessionManager.loggedIn}">
+            <div style="padding: 3rem; text-align: center;">
+                <h:outputLink value="../login.xhtml">Veuillez vous connecter</h:outputLink>
+            </div>
+        </c:if>
+
+        <c:if test="#{sessionManager.loggedIn}">
+
+            <div class="header">
+                <h1>Justifications à examiner (Advisor)</h1>
+                <div>
+                    <span>#{sessionManager.currentUserName}</span>
+                    <h:form style="display: inline; margin-left: 1rem;">
+                        <h:commandButton value="Déconnexion"
+                                         action="#{loginBean.doLogout}"
+                                         styleClass="btn-logout"/>
+                    </h:form>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <h:messages globalOnly="true"
+                            infoClass="message-info"
+                            errorClass="message-error"/>
+
+                <c:if test="#{advisorBean.currentAdvisor == null}">
+                    <div class="card">
+                        <div class="empty-state">
+                            Cette page est réservée aux academic advisors.
+                        </div>
+                    </div>
+                </c:if>
+
+                <c:if test="#{advisorBean.currentAdvisor != null}">
+
+                    <!-- FORMULAIRE DE DÉCISION (affiché en haut quand une justif est sélectionnée) -->
+                    <c:if test="#{not empty advisorBean.selectedAttendanceId}">
+                        <div class="card">
+                            <h2>Décision</h2>
+                            <div class="decision-form" style="margin-top: 1rem;">
+                                <h3>Votre commentaire et décision</h3>
+                                <h:form>
+                                    <label>Commentaire (obligatoire pour un rejet)</label>
+                                    <h:inputTextarea value="#{advisorBean.advisorComments}" rows="3"/>
+
+                                    <div class="actions">
+                                        <h:commandButton value="Accepter (vers prof)"
+                                                         action="#{advisorBean.acceptJustification}"
+                                                         styleClass="btn-accept"/>
+                                        <h:commandButton value="Rejeter"
+                                                         action="#{advisorBean.rejectJustification}"
+                                                         styleClass="btn-reject"/>
+                                        <h:commandButton value="Annuler"
+                                                         action="#{advisorBean.cancelDecision}"
+                                                         styleClass="btn-cancel"
+                                                         immediate="true"/>
+                                    </div>
+                                </h:form>
+                            </div>
+                        </div>
+                    </c:if>
+
+                    <!-- LISTE DES JUSTIFICATIONS -->
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2>En attente d'examen (#{advisorBean.pendingJustifications.size()})</h2>
+                            <h:form>
+                                <h:commandButton value="Rafraîchir"
+                                                 action="#{advisorBean.refresh}"
+                                                 styleClass="btn-refresh"/>
+                            </h:form>
+                        </div>
+
+                        <c:if test="#{empty advisorBean.pendingJustifications}">
+                            <div class="empty-state">Aucune justification en attente d'examen.</div>
+                        </c:if>
+
+                        <c:if test="#{not empty advisorBean.pendingJustifications}">
+                            <h:form>
+                                <ui:repeat value="#{advisorBean.pendingJustifications}" var="j">
+                                    <div class="justif-block">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                            <div>
+                                                <div class="student-name">#{j.student.firstName} #{j.student.lastName}</div>
+                                                <div class="meta">
+                                                    Matricule : #{j.student.matricule} · #{j.student.school}
+                                                </div>
+                                            </div>
+                                            <span class="badge">Soumise</span>
+                                        </div>
+
+                                        <div class="info-row">
+                                            <div class="info-label">Date absence :</div>
+                                            <div class="info-value">#{j.attendance.attendanceDate}</div>
+
+                                            <div class="info-label">Cours :</div>
+                                            <div class="info-value">#{j.course.code} - #{j.course.name}</div>
+
+                                            <div class="info-label">Professeur :</div>
+                                            <div class="info-value">#{j.faculty.firstName} #{j.faculty.lastName}</div>
+
+                                            <div class="info-label">Cause invoquée :</div>
+                                            <div class="info-value">#{j.causeType.name}</div>
+                                        </div>
+
+                                       <label>Explication de l'étudiant</label>
+<div class="reason-box">#{j.reasons}</div>
+
+<h:panelGroup rendered="#{advisorBean.getProofDataUri(j) != null}">
+    <div style="margin-top: 0.8rem;">
+        <label>📎 Preuve fournie par l'étudiant</label>
+        <div style="margin-top: 0.5rem;">
+            <img src="#{advisorBean.getProofDataUri(j)}"
+                 alt="Preuve"
+                 style="max-width: 220px; max-height: 220px; border-radius: 8px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        border: 2px solid #e2e8f0; cursor: pointer;"
+                 onclick="window.open(this.src, '_blank')"/>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.3rem;">
+                Cliquer sur l'image pour agrandir
+            </div>
+        </div>
+    </div>
+</h:panelGroup>
+<h:panelGroup rendered="#{advisorBean.getProofDataUri(j) == null}">
+    <div style="margin-top: 0.8rem; color: #94a3b8; font-size: 0.85rem; font-style: italic;">
+        📎 Aucune preuve fournie
+    </div>
+</h:panelGroup>
+
+<div class="actions">
+    
+                                            <h:commandButton value="Examiner"
+                                                             action="#{advisorBean.prepareDecision(j.student.studentID, j.attendance.attendanceID)}"
+                                                             styleClass="btn-review"/>
+                                        </div>
+                                    </div>
+                                </ui:repeat>
+                            </h:form>
+                        </c:if>
+                    </div>
+
+                </c:if>
+
+            </div>
+
+        </c:if>
+
+    </h:body>
+</html>
